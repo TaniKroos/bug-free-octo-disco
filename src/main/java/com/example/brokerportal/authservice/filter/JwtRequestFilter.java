@@ -34,6 +34,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        System.out.println("🔐 JwtRequestFilter executed for path: " + request.getRequestURI());
 
         String path = request.getRequestURI();
         if (path.equals("/authenticate") || path.equals("/register") || path.equals("/login")) {
@@ -59,7 +60,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Validate token type
         try {
             String tokenType = jwtUtil.getTokenType(token);
             if (!"access".equals(tokenType)) {
@@ -73,39 +73,32 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Handle token expiration
-        if (jwtUtil.isTokenExpired(token)) {
-            Optional<Token> tokenOptional = tokenRepository.findByUserEmail(email);
+        boolean authenticated = false;
 
+        if (!jwtUtil.isTokenExpired(token)) {
+            if (jwtUtil.validateToken(token, email)) {
+                setAuthentication(email, request);
+                authenticated = true;
+            }
+        } else {
+            Optional<Token> tokenOptional = tokenRepository.findByUserEmail(email);
             if (tokenOptional.isPresent()) {
                 Token dbToken = tokenOptional.get();
                 String refreshToken = dbToken.getRefreshToken();
-
                 try {
                     String refreshTokenType = jwtUtil.getTokenType(refreshToken);
-
                     if ("refresh".equals(refreshTokenType) && jwtUtil.validateRefreshToken(refreshToken, email)) {
-                        // ✅ Generate new access token
                         String newAccessToken = jwtUtil.generateAccessToken(email);
-
-                        // ✅ Send it in header
                         response.setHeader("X-New-Access-Token", newAccessToken);
 
-                        // ✅ Authenticate with new access token
-                        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                        chain.doFilter(request, response);
-                        return;
+                        setAuthentication(email, request);
+                        authenticated = true;
                     } else {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.getWriter().write("{\"error\": \"Invalid refresh token. Please log in again.\"}");
                         return;
                     }
-                } catch (Exception ex) {
+                } catch (Exception e) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.getWriter().write("{\"error\": \"Failed to refresh token. Please log in again.\"}");
                     return;
@@ -115,16 +108,23 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 response.getWriter().write("{\"error\": \"No refresh token found. Please log in again.\"}");
                 return;
             }
-        } else {
-            // ✅ Token is valid — just authenticate and move on
-            if (jwtUtil.validateToken(token, email)) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-            chain.doFilter(request, response);
         }
+
+        // Proceed to next filter
+
+            chain.doFilter(request, response);
+
     }
+    private void setAuthentication(String email, HttpServletRequest request) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        System.out.println("✅ Authenticated user: " + email);
+        System.out.println("Authorities: " + userDetails.getAuthorities());
+        System.out.println("SecurityContext Authentication: " + SecurityContextHolder.getContext().getAuthentication());
+
+    }
+
 }

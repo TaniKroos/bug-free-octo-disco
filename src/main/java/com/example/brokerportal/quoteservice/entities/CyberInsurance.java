@@ -16,11 +16,12 @@ public class CyberInsurance {
     private Integer numberOfComputers;
     private String securityLevel;
     private String dataSensitivity;
-    @OneToMany(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "cyberInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Coverage> coverages;
 
-    @OneToMany(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Premium> premiums;
+    @OneToOne(mappedBy = "cyberInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Premium premium;
+
     @OneToOne
     @JoinColumn(name = "quote_insurance_id")
     private QuoteInsurance quoteInsurance;

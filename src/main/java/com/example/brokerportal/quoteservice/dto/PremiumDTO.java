@@ -7,15 +7,16 @@ import java.math.BigDecimal;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class PremiumDTO {
     private Long id;
-    private BigDecimal baseAmount;
-    private BigDecimal taxAmount;
-    private BigDecimal totalAmount;
-    private String premiumType;
+    private Double basePremium;
+    private Double totalPremium;
+    private Double taxes;
+
+    private Long quoteId;
+    private Long quoteInsuranceId;
 
     private Long propertyInsuranceId;
     private Long cyberInsuranceId;
     private Long employeeInsuranceId;
-    private Long quoteId;
 }
 
 

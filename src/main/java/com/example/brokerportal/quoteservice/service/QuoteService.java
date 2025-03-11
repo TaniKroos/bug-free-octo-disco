@@ -6,9 +6,10 @@ import java.util.List;
 
 public interface QuoteService {
     QuoteDTO createQuote(QuoteDTO quoteDTO);
-    QuoteDTO udateQuote(Long id, QuoteDTO quoteDTO);
-    List<QuoteDTO> getAllQuotesByUserId(Long userId);
+    QuoteDTO updateQuote(Long id, QuoteDTO quoteDTO);
+    List<QuoteDTO> getQuotesByBrokerId(Long userId);
     QuoteDTO getQuoteById(Long id);
     void softDeleteQuote(Long id);
+
 
 }

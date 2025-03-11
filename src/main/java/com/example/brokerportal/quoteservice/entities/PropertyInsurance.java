@@ -26,8 +26,8 @@ public class PropertyInsurance {
     @OneToMany(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Coverage> coverages;
 
-    @OneToMany(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Premium> premiums;
+    @OneToOne(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Premium premium;
 
 
 }

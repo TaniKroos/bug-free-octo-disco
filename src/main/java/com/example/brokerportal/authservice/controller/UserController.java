@@ -4,6 +4,7 @@ import com.example.brokerportal.authservice.dto.UserDTO;
 import com.example.brokerportal.authservice.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,4 +22,10 @@ public class UserController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    @GetMapping("/api/test/me")
+    public ResponseEntity<?> whoAmI() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok("Logged in as: " + auth.getName());
+    }
+
 }

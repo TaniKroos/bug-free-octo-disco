@@ -13,4 +13,6 @@ public interface QuoteRepository extends JpaRepository<Quote, Long> {
     List<Quote> findByDeletedFalse();
 
     Optional<Quote> findByIdAndDeletedFalse(Long id);
+
+    List<Quote> findByBrokerIdAndDeletedFalse(Long brokerId);
 }

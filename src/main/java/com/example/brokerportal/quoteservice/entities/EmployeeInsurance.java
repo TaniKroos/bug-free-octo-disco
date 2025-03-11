@@ -16,11 +16,12 @@ public class EmployeeInsurance {
     private Integer numberOfEmployees;
     private String riskLevel;
     private String workerType;
-    @OneToMany(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "employeeInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Coverage> coverages;
 
-    @OneToMany(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Premium> premiums;
+    @OneToOne(mappedBy = "employeeInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Premium premium;
+
     @OneToOne
     @JoinColumn(name = "quote_insurance_id")
     private QuoteInsurance quoteInsurance;

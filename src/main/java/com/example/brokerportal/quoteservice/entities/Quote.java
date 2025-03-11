@@ -1,6 +1,7 @@
 package com.example.brokerportal.quoteservice.entities;
 
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
+import com.example.brokerportal.quoteservice.enums.InsuranceType;
 import jakarta.persistence.*;
 import lombok.*;
 import com.example.brokerportal.authservice.entities.User;
@@ -21,7 +22,10 @@ public class Quote {
     private BigDecimal estimatedPremium;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean isDeleted;
+
+//    @Enumerated(EnumType.STRING)
+//    @Column(name ="insurance_type")
+//    private InsuranceType insuranceType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "broker_id")
