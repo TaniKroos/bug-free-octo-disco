@@ -1,8 +1,10 @@
 package com.example.brokerportal.quoteservice.mapper;
 
-
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
+import com.example.brokerportal.quoteservice.entities.PropertyInsurance;
+import com.example.brokerportal.quoteservice.entities.CyberInsurance;
+import com.example.brokerportal.quoteservice.entities.EmployeeInsurance;
 
 public class QuoteInsuranceMapper {
 
@@ -28,9 +30,26 @@ public class QuoteInsuranceMapper {
                 .isSelected(dto.isSelected())
                 .build();
 
-        entity.setPropertyInsurance(PropertyInsuranceMapper.toEntity(dto.getPropertyInsurance()));
-        entity.setCyberInsurance(CyberInsuranceMapper.toEntity(dto.getCyberInsurance()));
-        entity.setEmployeeInsurance(EmployeeInsuranceMapper.toEntity(dto.getEmployeeInsurance()));
+        // Property Insurance
+        if (dto.getPropertyInsurance() != null) {
+            PropertyInsurance propertyInsurance = PropertyInsuranceMapper.toEntity(dto.getPropertyInsurance());
+            propertyInsurance.setQuoteInsurance(entity); // 🔥 bidirectional fix
+            entity.setPropertyInsurance(propertyInsurance);
+        }
+
+        // Cyber Insurance
+        if (dto.getCyberInsurance() != null) {
+            CyberInsurance cyberInsurance = CyberInsuranceMapper.toEntity(dto.getCyberInsurance());
+            cyberInsurance.setQuoteInsurance(entity); // 🔥 bidirectional fix
+            entity.setCyberInsurance(cyberInsurance);
+        }
+
+        // Employee Insurance
+        if (dto.getEmployeeInsurance() != null) {
+            EmployeeInsurance employeeInsurance = EmployeeInsuranceMapper.toEntity(dto.getEmployeeInsurance());
+            employeeInsurance.setQuoteInsurance(entity); // 🔥 bidirectional fix
+            entity.setEmployeeInsurance(employeeInsurance);
+        }
 
         return entity;
     }

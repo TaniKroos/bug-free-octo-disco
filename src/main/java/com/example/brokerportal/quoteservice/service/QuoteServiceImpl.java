@@ -32,6 +32,7 @@ public class QuoteServiceImpl implements QuoteService{
     private final UserRepository userRepository;
     private final UserService userService;
     private final QuoteInsuranceRepository quoteInsuranceRepository;
+    private final QuoteInsuranceServiceImpl quoteInsuranceService;
     @Override
     @Transactional
     public QuoteDTO createQuote(QuoteDTO quoteDTO){
@@ -60,18 +61,9 @@ public class QuoteServiceImpl implements QuoteService{
             quote.setClient(client);
         }
 
-        List<QuoteInsurance> quoteInsurances = new ArrayList<>();
-        if(quoteDTO.getInsurances() != null){
-            for(QuoteInsuranceDTO insuranceDTO: quoteDTO.getInsurances()){
-                QuoteInsurance quoteInsurance = new QuoteInsurance();
-                quoteInsurance.setInsuranceType(insuranceDTO.getInsuranceType());
-                quoteInsurance.setSelected(insuranceDTO.isSelected());
-                quoteInsurance.setQuote(quote);
-                quoteInsurances.add(quoteInsurance);
-            }
+        if(quoteDTO.getInsurances() != null && !quoteDTO.getInsurances().isEmpty()){
+            quoteInsuranceService.mapAndAttachInsurancesToQuote(quote,quoteDTO.getInsurances());
         }
-        quote.setInsurances(quoteInsurances);
-        quoteInsuranceRepository.saveAll(quoteInsurances);
         Quote saved = quoteRepository.save(quote);
         return QuoteMapper.toDTO(saved);
     }
@@ -109,17 +101,8 @@ public class QuoteServiceImpl implements QuoteService{
         quote.setUpdatedAt(LocalDateTime.now());
 
         if (updatedQuoteDto.getInsurances() != null && !updatedQuoteDto.getInsurances().isEmpty()) {
-            // ✅ Clear old insurances
-            quote.getInsurances().clear();
-
-            // ✅ Add new ones directly to the same collection
-            for (QuoteInsuranceDTO insuranceDTO : updatedQuoteDto.getInsurances()) {
-                QuoteInsurance quoteInsurance = new QuoteInsurance();
-                quoteInsurance.setInsuranceType(insuranceDTO.getInsuranceType());
-                quoteInsurance.setSelected(insuranceDTO.isSelected());
-                quoteInsurance.setQuote(quote); // IMPORTANT: set quote
-                quote.getInsurances().add(quoteInsurance);
-            }
+           quoteInsuranceService.deleteInsurancesByQuote(quote);
+           quoteInsuranceService.mapAndAttachInsurancesToQuote(quote,updatedQuoteDto.getInsurances());
         }
 
         Quote updatedQuote = quoteRepository.save(quote);

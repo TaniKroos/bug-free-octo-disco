@@ -17,10 +17,19 @@ public class CyberInsuranceMapper {
 
         return CyberInsuranceDTO.builder()
                 .id(entity.getId())
-                .numberOfComputers(entity.getNumberOfComputers())
-                .securityLevel(entity.getSecurityLevel())
-                .dataSensitivity(entity.getDataSensitivity())
-                .coverages(toCoverageDtoList(entity.getCoverages()))
+                .coverageLimit(entity.getCoverageLimit())
+                .deductible(entity.getDeductible())
+                .hasPriorCyberIncidents(entity.getHasPriorCyberIncidents())
+                .numberOfPriorIncidents(entity.getNumberOfPriorIncidents())
+                .usesFirewallAntivirus(entity.getUsesFirewallAntivirus())
+                .hasDataBackupPolicy(entity.getHasDataBackupPolicy())
+                .storesCustomerData(entity.getStoresCustomerData())
+                .dataRecordsVolume(entity.getDataRecordsVolume())
+                .hasCybersecurityTraining(entity.getHasCybersecurityTraining())
+                .paymentProcessingMethods(entity.getPaymentProcessingMethods())
+                .cloudServicesUsed(entity.getCloudServicesUsed())
+                .industryType(entity.getIndustryType())
+                .coverages(toCoverageDtoList(entity.getCoverages()))              // ✅ map coverages
                 .premium(PremiumMapper.toDTO(entity.getPremium()))
                 .build();
     }
@@ -30,11 +39,19 @@ public class CyberInsuranceMapper {
 
         CyberInsurance cyberInsurance = CyberInsurance.builder()
                 .id(dto.getId())
-                .numberOfComputers(dto.getNumberOfComputers())
-                .securityLevel(dto.getSecurityLevel())
-                .dataSensitivity(dto.getDataSensitivity())
+                .coverageLimit(dto.getCoverageLimit())
+                .deductible(dto.getDeductible())
+                .hasPriorCyberIncidents(dto.getHasPriorCyberIncidents())
+                .numberOfPriorIncidents(dto.getNumberOfPriorIncidents())
+                .usesFirewallAntivirus(dto.getUsesFirewallAntivirus())
+                .hasDataBackupPolicy(dto.getHasDataBackupPolicy())
+                .storesCustomerData(dto.getStoresCustomerData())
+                .dataRecordsVolume(dto.getDataRecordsVolume())
+                .hasCybersecurityTraining(dto.getHasCybersecurityTraining())
+                .paymentProcessingMethods(dto.getPaymentProcessingMethods())
+                .cloudServicesUsed(dto.getCloudServicesUsed())
+                .industryType(dto.getIndustryType())
                 .build();
-
         if (dto.getCoverages() != null) {
             List<Coverage> coverages = dto.getCoverages().stream()
                     .map(coverageDto -> {
