@@ -15,7 +15,9 @@ import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceReposito
 import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,6 +35,12 @@ public class QuoteServiceImpl implements QuoteService{
     @Override
     @Transactional
     public QuoteDTO createQuote(QuoteDTO quoteDTO){
+
+        System.out.println("===> Received QuoteDTO in createQuote()");
+        System.out.println("Status: " + quoteDTO.getStatus());
+        System.out.println("Client: " + quoteDTO.getClient());
+        System.out.println("Insurances: " + quoteDTO.getInsurances());
+
         Quote quote = QuoteMapper.toEntity(quoteDTO);
         quote.setCreatedAt(LocalDateTime.now());
         quote.setUpdatedAt(LocalDateTime.now());
@@ -69,57 +77,81 @@ public class QuoteServiceImpl implements QuoteService{
     }
 
     @Override
-    public QuoteDTO getQuoteById(Long id){
+    public QuoteDTO getQuoteById(Long id) {
+
+
         Quote quote = quoteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Quote with this id:" + id + "doesn't exist in the database"));
+                .orElseThrow(() -> new RuntimeException("Quote with this id:" + id + " doesn't exist in the database"));
+
+        authorizeBrokerAccess(quote);
+
+
         return QuoteMapper.toDTO(quote);
     }
 
     @Override
     @Transactional
-    public QuoteDTO updateQuote(Long id,QuoteDTO updadtedQuoteDto){
+    public QuoteDTO updateQuote(Long id, QuoteDTO updatedQuoteDto) {
+
+
         Quote quote = quoteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Quotee with this id: " + id + "Doesn't exist"));
-        if (updadtedQuoteDto.getStatus() != null) {
-            quote.setStatus(updadtedQuoteDto.getStatus());
+                .orElseThrow(() -> new RuntimeException("Quote with this id: " + id + " doesn't exist"));
+
+
+
+        authorizeBrokerAccess(quote);
+
+
+        if (updatedQuoteDto.getStatus() != null) {
+            quote.setStatus(updatedQuoteDto.getStatus());
         }
 
         quote.setUpdatedAt(LocalDateTime.now());
-        if (updadtedQuoteDto.getInsurances() != null && !updadtedQuoteDto.getInsurances().isEmpty()) {
 
-            quoteInsuranceRepository.deleteAllByQuote(quote);
+        if (updatedQuoteDto.getInsurances() != null && !updatedQuoteDto.getInsurances().isEmpty()) {
+            // ✅ Clear old insurances
+            quote.getInsurances().clear();
 
-
-            List<QuoteInsurance> updatedInsurances = new ArrayList<>();
-            for (QuoteInsuranceDTO insuranceDTO : updadtedQuoteDto.getInsurances()) {
+            // ✅ Add new ones directly to the same collection
+            for (QuoteInsuranceDTO insuranceDTO : updatedQuoteDto.getInsurances()) {
                 QuoteInsurance quoteInsurance = new QuoteInsurance();
                 quoteInsurance.setInsuranceType(insuranceDTO.getInsuranceType());
                 quoteInsurance.setSelected(insuranceDTO.isSelected());
-                quoteInsurance.setQuote(quote);
-                updatedInsurances.add(quoteInsurance);
+                quoteInsurance.setQuote(quote); // IMPORTANT: set quote
+                quote.getInsurances().add(quoteInsurance);
             }
-
-
-            quote.setInsurances(updatedInsurances);
-            quoteInsuranceRepository.saveAll(updatedInsurances);
         }
+
         Quote updatedQuote = quoteRepository.save(quote);
         return QuoteMapper.toDTO(updatedQuote);
     }
+
     @Override
     @Transactional
     public void softDeleteQuote(Long id) {
         Quote quote = quoteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Quote not found with id: " + id));
+        authorizeBrokerAccess(quote);
+
         quote.setDeleted(true);
         quote.setUpdatedAt(LocalDateTime.now());
         quoteRepository.save(quote);
     }
 
     @Override
-    public List<QuoteDTO> getQuotesByBrokerId(Long brokerId) {
+    public List<QuoteDTO> getQuotesByBrokerId() {
+        User broker = userService.getCurrentUser();
+        Long brokerId = broker.getId();
         List<Quote> quotes = quoteRepository.findByBrokerIdAndDeletedFalse(brokerId);
         return quotes.stream().map(QuoteMapper::toDTO).collect(Collectors.toList());
+    }
+
+    // To authorize the broker
+    private void authorizeBrokerAccess(Quote quote) {
+        User user = userService.getCurrentUser();
+        if (!quote.getBroker().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not authorized to access or modify this quote");
+        }
     }
 
 
