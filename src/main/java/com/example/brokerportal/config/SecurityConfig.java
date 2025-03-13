@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/authenticate", "/register").permitAll() // Public endpoints
                         .requestMatchers("/api/quotes/**").authenticated()
+                        .requestMatchers("/api/cyber-insurance/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

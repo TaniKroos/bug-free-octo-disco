@@ -11,6 +11,7 @@ import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
 import com.example.brokerportal.quoteservice.repositories.ClientRepository;
+import com.example.brokerportal.quoteservice.repositories.CyberInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
 import jakarta.transaction.Transactional;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +35,7 @@ public class QuoteServiceImpl implements QuoteService{
     private final UserService userService;
     private final QuoteInsuranceRepository quoteInsuranceRepository;
     private final QuoteInsuranceServiceImpl quoteInsuranceService;
+    private final CyberInsuranceRepository cyberInsuranceRepository;
     @Override
     @Transactional
     public QuoteDTO createQuote(QuoteDTO quoteDTO){
@@ -60,11 +63,11 @@ public class QuoteServiceImpl implements QuoteService{
             }
             quote.setClient(client);
         }
-
+        Quote saved = quoteRepository.save(quote);
         if(quoteDTO.getInsurances() != null && !quoteDTO.getInsurances().isEmpty()){
             quoteInsuranceService.mapAndAttachInsurancesToQuote(quote,quoteDTO.getInsurances());
         }
-        Quote saved = quoteRepository.save(quote);
+
         return QuoteMapper.toDTO(saved);
     }
 
@@ -101,8 +104,7 @@ public class QuoteServiceImpl implements QuoteService{
         quote.setUpdatedAt(LocalDateTime.now());
 
         if (updatedQuoteDto.getInsurances() != null && !updatedQuoteDto.getInsurances().isEmpty()) {
-           quoteInsuranceService.deleteInsurancesByQuote(quote);
-           quoteInsuranceService.mapAndAttachInsurancesToQuote(quote,updatedQuoteDto.getInsurances());
+            updateInsurancesSelection(quote, updatedQuoteDto.getInsurances());
         }
 
         Quote updatedQuote = quoteRepository.save(quote);
@@ -137,6 +139,42 @@ public class QuoteServiceImpl implements QuoteService{
         }
     }
 
+    // to handle soft deletion of insurances
+    private void updateInsurancesSelection(Quote quote, List<QuoteInsuranceDTO> updatedInsurances) {
+        Map<String, Boolean> selectionMap = updatedInsurances.stream()
+                .collect(Collectors.toMap(QuoteInsuranceDTO::getInsuranceType, QuoteInsuranceDTO::isSelected));
 
+        for (QuoteInsurance qi : quote.getInsurances()) {
+            String insuranceType = qi.getInsuranceType();
 
+            if (selectionMap.containsKey(insuranceType)) {
+                boolean selected = selectionMap.get(insuranceType);
+                qi.setSelected(selected);
+
+                // 🔥 Restore soft-deleted cyber insurance if selected = true
+                if ("CYBER".equalsIgnoreCase(insuranceType)
+                        && selected
+                        && qi.getCyberInsurance() != null
+                        && Boolean.TRUE.equals(qi.getCyberInsurance().getDeleted())) {
+
+                    qi.getCyberInsurance().setDeleted(false);
+                    // ⚠️ Important: you must save the CyberInsurance here, otherwise change is lost
+                    cyberInsuranceRepository.save(qi.getCyberInsurance());
+                }
+            }
+        }
+
+        // Add new insurance types if they don’t exist
+        updatedInsurances.forEach(dto -> {
+            boolean alreadyPresent = quote.getInsurances().stream()
+                    .anyMatch(q -> q.getInsuranceType().equalsIgnoreCase(dto.getInsuranceType()));
+            if (!alreadyPresent) {
+                QuoteInsurance newInsurance = new QuoteInsurance();
+                newInsurance.setInsuranceType(dto.getInsuranceType());
+                newInsurance.setSelected(dto.isSelected());
+                newInsurance.setQuote(quote);
+                quote.getInsurances().add(newInsurance);
+            }
+        });
+    }
 }

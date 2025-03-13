@@ -8,6 +8,7 @@ import com.example.brokerportal.authservice.entities.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -36,7 +37,7 @@ public class Quote {
     private Client client;
 
     @OneToMany(mappedBy = "quote", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<QuoteInsurance> insurances;
+    private List<QuoteInsurance> insurances = new ArrayList<>();
 
     @Column(name = "is_deleted")
     private boolean deleted = false;

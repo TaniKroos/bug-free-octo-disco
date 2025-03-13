@@ -58,4 +58,7 @@ public class CyberInsurance {
     @OneToOne
     @JoinColumn(name = "quote_insurance_id", nullable = false)
     private QuoteInsurance quoteInsurance;
+
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
 }

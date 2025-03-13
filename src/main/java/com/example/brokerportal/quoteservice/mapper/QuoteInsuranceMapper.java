@@ -30,26 +30,7 @@ public class QuoteInsuranceMapper {
                 .isSelected(dto.isSelected())
                 .build();
 
-        // Property Insurance
-        if (dto.getPropertyInsurance() != null) {
-            PropertyInsurance propertyInsurance = PropertyInsuranceMapper.toEntity(dto.getPropertyInsurance());
-            propertyInsurance.setQuoteInsurance(entity); // 🔥 bidirectional fix
-            entity.setPropertyInsurance(propertyInsurance);
-        }
 
-        // Cyber Insurance
-        if (dto.getCyberInsurance() != null) {
-            CyberInsurance cyberInsurance = CyberInsuranceMapper.toEntity(dto.getCyberInsurance());
-            cyberInsurance.setQuoteInsurance(entity); // 🔥 bidirectional fix
-            entity.setCyberInsurance(cyberInsurance);
-        }
-
-        // Employee Insurance
-        if (dto.getEmployeeInsurance() != null) {
-            EmployeeInsurance employeeInsurance = EmployeeInsuranceMapper.toEntity(dto.getEmployeeInsurance());
-            employeeInsurance.setQuoteInsurance(entity); // 🔥 bidirectional fix
-            entity.setEmployeeInsurance(employeeInsurance);
-        }
 
         return entity;
     }
