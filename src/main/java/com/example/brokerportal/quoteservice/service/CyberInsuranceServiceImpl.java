@@ -1,9 +1,9 @@
 package com.example.brokerportal.quoteservice.service;
 
-
 import com.example.brokerportal.authservice.entities.User;
 import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.CyberInsuranceDTO;
+import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.entities.*;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
@@ -14,11 +14,10 @@ import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceReposito
 import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import lombok.extern.slf4j.Slf4j;
 
-import javax.swing.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class CyberInsuranceServiceImpl implements CyberInsuranceService {
+
     private final CyberInsuranceRepository cyberInsuranceRepository;
     private final QuoteRepository quoteRepository;
     private final QuoteInsuranceRepository quoteInsuranceRepository;
@@ -54,23 +54,31 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
             throw new IllegalStateException("Cyber Insurance already exists. Use update endpoint.");
         }
 
-        CyberInsurance entity = CyberInsuranceMapper.toEntity(dto);
+        // Convert DTO to Entity (excluding coverage mapping here)
+        CyberInsurance entity = CyberInsuranceMapper.toEntity(dto,quoteInsurance);
         entity.setQuoteInsurance(quoteInsurance);
 
-        if (entity.getCoverages() != null) {
-            entity.getCoverages().forEach(c -> c.setCyberInsurance(entity));
-        }
-
-        if (entity.getPremium() != null) {
-            entity.getPremium().setCyberInsurance(entity);
+        // Map Premium (if present)
+        if (dto.getPremium() != null) {
+            Premium premium = PremiumMapper.toEntity(dto.getPremium());
+            premium.setCyberInsurance(entity);
+            entity.setPremium(premium);
         }
 
         quoteInsurance.setCyberInsurance(entity);
 
+        // Handle Coverages (must be linked to QuoteInsurance, NOT CyberInsurance)
+        if (dto.getCoverages() != null) {
+            List<Coverage> coverages = dto.getCoverages().stream()
+                    .map(covDto -> CoverageMapper.toEntity(covDto, quoteInsurance))
+                    .collect(Collectors.toList());
+            quoteInsurance.getCoverages().addAll(coverages);
+        }
+
         cyberInsuranceRepository.save(entity);
         quoteInsuranceRepository.save(quoteInsurance);
 
-        return CyberInsuranceMapper.toDTO(entity);
+        return CyberInsuranceMapper.toDTO(entity,quoteInsurance.getCoverages());
     }
 
     @Override
@@ -97,13 +105,56 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
             throw new ResourceNotFoundException("Cyber Insurance not found for this quote.");
         }
 
-        CyberInsuranceMapper.updateEntityFromDTO(entity, dto);
-        if (entity.getPremium() != null) {
-            entity.getPremium().setCyberInsurance(entity);
+        // Update CyberInsurance fields
+        CyberInsuranceMapper.updateEntityFromDTO(entity, dto,quoteInsurance);
+
+        if (dto.getPremium() != null) {
+            if (entity.getPremium() != null) {
+                Premium premium = entity.getPremium();
+                premium.setBasePremium(dto.getPremium().getBasePremium());
+                premium.setTaxes(dto.getPremium().getTaxes());
+                premium.setTotalPremium(dto.getPremium().getTotalPremium());
+
+            } else {
+                Premium newPremium = PremiumMapper.toEntity(dto.getPremium());
+                newPremium.setCyberInsurance(entity);
+                entity.setPremium(newPremium);
+            }
+        }
+
+        // Update Coverages via QuoteInsurance (NOT CyberInsurance)
+        if (dto.getCoverages() != null) {
+            List<Coverage> existingCoverages = quoteInsurance.getCoverages();
+            List<Long> incomingIds = dto.getCoverages().stream()
+                    .map(CoverageDTO::getId)
+                    .collect(Collectors.toList());
+
+            // Update existing coverages
+            for (CoverageDTO covDto : dto.getCoverages()) {
+                if (covDto.getId() != null) {
+                    existingCoverages.stream()
+                            .filter(c -> c.getId().equals(covDto.getId()))
+                            .findFirst()
+                            .ifPresent(c -> {
+                                c.setCoverageType(covDto.getCoverageType());
+                                c.setCoverageAmount(covDto.getCoverageAmount());
+                                c.setDescription(covDto.getDescription());
+                            });
+                } else {
+                    // New coverage
+                    Coverage newCov = CoverageMapper.toEntity(covDto, quoteInsurance);
+                    existingCoverages.add(newCov);
+                }
+            }
+
+            // Remove deleted coverages
+            existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
         }
 
         cyberInsuranceRepository.save(entity);
-        return CyberInsuranceMapper.toDTO(entity);
+        quoteInsuranceRepository.save(quoteInsurance);
+
+        return CyberInsuranceMapper.toDTO(entity, quoteInsurance.getCoverages());
     }
 
     @Override
@@ -118,13 +169,13 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
             throw new ResourceNotFoundException("Cyber Insurance not available or has been soft deleted.");
         }
 
-        return CyberInsuranceMapper.toDTO(cyberInsurance);
+        return CyberInsuranceMapper.toDTO(cyberInsurance, insurance.getCoverages());
     }
 
     @Override
     @Transactional
     public void softDeleteCyberInsurance(Long quoteId) {
-        log.info("Soft deleting Cyber Insurance for Quote ID: {}", quoteId); // ✅ Log before
+        log.info("Soft deleting Cyber Insurance for Quote ID: {}", quoteId);
 
         QuoteInsurance insurance = quoteInsuranceRepository.findByQuoteIdAndInsuranceType(quoteId, "CYBER")
                 .orElseThrow(() -> new ResourceNotFoundException("Cyber Insurance not found for Quote ID: " + quoteId));
@@ -133,15 +184,9 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
 
         CyberInsurance cyberInsurance = insurance.getCyberInsurance();
         if (cyberInsurance != null) {
-            log.info("Before soft delete, CyberInsurance ID: {}, deleted status: {}",
-                    cyberInsurance.getId(), cyberInsurance.getDeleted()); // ✅ Log current status
-
             cyberInsurance.setDeleted(true);
             cyberInsuranceRepository.save(cyberInsurance);
-
-            log.info("CyberInsurance marked as deleted. ID: {}", cyberInsurance.getId()); // ✅ Log after update
-        } else {
-            log.warn("No Cyber Insurance found for Quote ID: {}. Nothing to delete.", quoteId); // ✅ Log warning if null
+            log.info("CyberInsurance marked as deleted. ID: {}", cyberInsurance.getId());
         }
 
         insurance.setSelected(false);

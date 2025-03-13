@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 @Table(name = "coverages")
@@ -24,26 +25,23 @@ public class Coverage {
     private BigDecimal coverageAmount;
     private String description;
 
-    // Coverage mapped to PropertyInsurance (optional)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "property_insurance_id")
-    private PropertyInsurance propertyInsurance;
+    @JoinColumn(name = "quote_insurance_id")
+    private QuoteInsurance quoteInsurance;
 
-    // Coverage mapped to CyberInsurance (optional)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cyber_insurance_id")
-    private CyberInsurance cyberInsurance;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Coverage coverage = (Coverage) o;
+        return id != null && id.equals(coverage.id);
+    }
 
-    // Coverage mapped to EmployeeInsurance (optional)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_insurance_id")
-    private EmployeeInsurance employeeInsurance;
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
 
 }
 

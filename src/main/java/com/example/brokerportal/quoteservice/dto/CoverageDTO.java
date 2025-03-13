@@ -15,8 +15,6 @@ public class CoverageDTO {
     private String coverageType;
     private String description;
     private BigDecimal coverageAmount;
+    private Long quoteInsuranceId; //
 
-    private Long propertyInsuranceId;
-    private Long cyberInsuranceId;
-    private Long employeeInsuranceId;
 }

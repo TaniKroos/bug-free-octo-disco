@@ -15,6 +15,6 @@ public class PropertyInsuranceDTO {
     private Double area;
     private Double valuation;
 
-    private List<CoverageDTO> coverages;
+
     private PremiumDTO premium;
 }

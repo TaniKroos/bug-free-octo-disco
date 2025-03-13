@@ -17,11 +17,6 @@ public class EmployeeInsuranceMapper {
         return EmployeeInsuranceDTO.builder()
                 .id(entity.getId())
                 .numberOfEmployees(entity.getNumberOfEmployees())
-                .coverages(entity.getCoverages() != null
-                        ? entity.getCoverages().stream()
-                        .map(CoverageMapper::toDTO)
-                        .collect(Collectors.toList())
-                        : null)
                 .premium(entity.getPremium() != null
                         ? PremiumMapper.toDTO(entity.getPremium())
                         : null)
@@ -36,15 +31,8 @@ public class EmployeeInsuranceMapper {
                 .numberOfEmployees(dto.getNumberOfEmployees())
                 .build();
 
-        // Map and set coverages
-        if (dto.getCoverages() != null) {
-            List<Coverage> coverages = dto.getCoverages().stream()
-                    .map(coverageDto -> CoverageMapper.toEntity(coverageDto, null, null, entity))
-                    .collect(Collectors.toList());
-            entity.setCoverages(coverages);
-        }
 
-        // Map and set premium
+        // ✅ Map Premium
         if (dto.getPremium() != null) {
             Premium premium = PremiumMapper.toEntity(dto.getPremium());
             premium.setEmployeeInsurance(entity);

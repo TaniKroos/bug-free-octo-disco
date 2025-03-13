@@ -16,7 +16,7 @@ public class QuoteInsuranceMapper {
                 .insuranceType(entity.getInsuranceType())
                 .isSelected(entity.isSelected())
                 .propertyInsurance(PropertyInsuranceMapper.toDTO(entity.getPropertyInsurance()))
-                .cyberInsurance(CyberInsuranceMapper.toDTO(entity.getCyberInsurance()))
+                .cyberInsurance(CyberInsuranceMapper.toDTO(entity.getCyberInsurance(), entity.getCoverages()))
                 .employeeInsurance(EmployeeInsuranceMapper.toDTO(entity.getEmployeeInsurance()))
                 .build();
     }
@@ -24,14 +24,10 @@ public class QuoteInsuranceMapper {
     public static QuoteInsurance toEntity(QuoteInsuranceDTO dto) {
         if (dto == null) return null;
 
-        QuoteInsurance entity = QuoteInsurance.builder()
+        return QuoteInsurance.builder()
                 .id(dto.getId())
                 .insuranceType(dto.getInsuranceType())
                 .isSelected(dto.isSelected())
                 .build();
-
-
-
-        return entity;
     }
 }

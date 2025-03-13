@@ -1,20 +1,19 @@
 package com.example.brokerportal.quoteservice.mapper;
 
-
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.dto.CyberInsuranceDTO;
+import com.example.brokerportal.quoteservice.dto.PremiumDTO;
 import com.example.brokerportal.quoteservice.entities.Coverage;
 import com.example.brokerportal.quoteservice.entities.CyberInsurance;
 import com.example.brokerportal.quoteservice.entities.Premium;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CyberInsuranceMapper {
 
-    public static CyberInsuranceDTO toDTO(CyberInsurance entity) {
+    public static CyberInsuranceDTO toDTO(CyberInsurance entity, List<Coverage> quoteInsuranceCoverages) {
         if (entity == null) return null;
 
         return CyberInsuranceDTO.builder()
@@ -31,12 +30,17 @@ public class CyberInsuranceMapper {
                 .paymentProcessingMethods(entity.getPaymentProcessingMethods())
                 .cloudServicesUsed(entity.getCloudServicesUsed())
                 .industryType(entity.getIndustryType())
-                .coverages(toCoverageDtoList(entity.getCoverages()))              // ✅ map coverages
+                .coverages(quoteInsuranceCoverages != null
+                        ? quoteInsuranceCoverages.stream()
+                        .map(CoverageMapper::toDTO)
+                        .collect(Collectors.toList())
+                        : null)
                 .premium(PremiumMapper.toDTO(entity.getPremium()))
                 .build();
     }
 
-    public static CyberInsurance toEntity(CyberInsuranceDTO dto) {
+
+    public static CyberInsurance toEntity(CyberInsuranceDTO dto, QuoteInsurance quoteInsurance) {
         if (dto == null) return new CyberInsurance();
 
         CyberInsurance cyberInsurance = CyberInsurance.builder()
@@ -55,22 +59,17 @@ public class CyberInsuranceMapper {
                 .industryType(dto.getIndustryType())
                 .deleted(false)
                 .build();
-        if (dto.getCoverages() != null) {
-            List<Coverage> coverages = dto.getCoverages().stream()
-                    .map(coverageDto -> {
-                        Coverage coverage = CoverageMapper.toEntity(coverageDto, null, cyberInsurance, null);
-                        return coverage;
-                    })
-                    .collect(Collectors.toList());
-            cyberInsurance.setCoverages(coverages);
-        }
 
+        cyberInsurance.setQuoteInsurance(quoteInsurance); // ✅ establish link
+
+        // Premium Mapping
         if (dto.getPremium() != null) {
             Premium premium = PremiumMapper.toEntity(dto.getPremium());
             premium.setCyberInsurance(cyberInsurance);
             cyberInsurance.setPremium(premium);
         }
 
+        // ✅ Coverages will be created and added directly to quoteInsurance externally
         return cyberInsurance;
     }
 
@@ -80,7 +79,8 @@ public class CyberInsuranceMapper {
                 .map(CoverageMapper::toDTO)
                 .collect(Collectors.toList());
     }
-    public static void updateEntityFromDTO(CyberInsurance entity, CyberInsuranceDTO dto) {
+
+    public static void updateEntityFromDTO(CyberInsurance entity, CyberInsuranceDTO dto, QuoteInsurance quoteInsurance) {
         if (dto == null || entity == null) return;
 
         entity.setCoverageLimit(dto.getCoverageLimit());
@@ -96,35 +96,56 @@ public class CyberInsuranceMapper {
         entity.setCloudServicesUsed(dto.getCloudServicesUsed());
         entity.setIndustryType(dto.getIndustryType());
 
-        // Update coverages
+        // ✅ Update Coverages in QuoteInsurance
         if (dto.getCoverages() != null) {
-            if (entity.getCoverages() == null) {
-                entity.setCoverages(new ArrayList<>());
-            } else {
-                entity.getCoverages().clear();
+            Map<Long, Coverage> existingMap = quoteInsurance.getCoverages().stream()
+                    .filter(c -> c.getId() != null)
+                    .collect(Collectors.toMap(Coverage::getId, c -> c));
+
+            Set<Long> incomingIds = new HashSet<>();
+
+            for (CoverageDTO covDto : dto.getCoverages()) {
+                if (covDto.getId() != null && existingMap.containsKey(covDto.getId())) {
+                    // Update existing
+                    Coverage existing = existingMap.get(covDto.getId());
+                    existing.setCoverageType(covDto.getCoverageType());
+                    existing.setCoverageAmount(covDto.getCoverageAmount());
+                    existing.setDescription(covDto.getDescription());
+                    incomingIds.add(covDto.getId());
+                } else {
+                    // Add new
+                    Coverage newCoverage = CoverageMapper.toEntity(covDto, quoteInsurance);
+                    quoteInsurance.getCoverages().add(newCoverage);
+                }
             }
-            List<Coverage> updatedCoverages = dto.getCoverages().stream()
-                    .map(covDto -> {
-                        Coverage coverage = CoverageMapper.toEntity(covDto, null, entity, null);
-                        coverage.setCyberInsurance(entity);
-                        return coverage;
-                    })
-                    .collect(Collectors.toList());
-            // Don't replace collection — just addAll to existing one
-            entity.getCoverages().addAll(updatedCoverages);
+
+            // Remove stale ones
+            Iterator<Coverage> iterator = quoteInsurance.getCoverages().iterator();
+            while (iterator.hasNext()) {
+                Coverage coverage = iterator.next();
+                if (coverage.getId() != null && !incomingIds.contains(coverage.getId())) {
+                    iterator.remove(); // orphan removal
+                }
+            }
         }
 
-        // Update premium
+        // ✅ Premium update
         if (dto.getPremium() != null) {
-            if (entity.getPremium() != null) {
-                // update existing premium
-                Premium premium = entity.getPremium();
-                premium.setBasePremium(dto.getPremium().getBasePremium());
-                premium.setTaxes(dto.getPremium().getTaxes());
-                premium.setTotalPremium(dto.getPremium().getTotalPremium());
+            PremiumDTO premiumDTO = dto.getPremium();
+            Premium premium = entity.getPremium();
+
+            if (premium != null) {
+                if (!Objects.equals(premium.getBasePremium(), premiumDTO.getBasePremium())) {
+                    premium.setBasePremium(premiumDTO.getBasePremium());
+                }
+                if (!Objects.equals(premium.getTaxes(), premiumDTO.getTaxes())) {
+                    premium.setTaxes(premiumDTO.getTaxes());
+                }
+                if (!Objects.equals(premium.getTotalPremium(), premiumDTO.getTotalPremium())) {
+                    premium.setTotalPremium(premiumDTO.getTotalPremium());
+                }
             } else {
-                // create new premium only if not already there
-                Premium newPremium = PremiumMapper.toEntity(dto.getPremium());
+                Premium newPremium = PremiumMapper.toEntity(premiumDTO);
                 newPremium.setCyberInsurance(entity);
                 entity.setPremium(newPremium);
             }

@@ -1,42 +1,59 @@
 package com.example.brokerportal.quoteservice.mapper;
 
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
-import com.example.brokerportal.quoteservice.entities.Coverage;
-import com.example.brokerportal.quoteservice.entities.CyberInsurance;
-import com.example.brokerportal.quoteservice.entities.EmployeeInsurance;
-import com.example.brokerportal.quoteservice.entities.PropertyInsurance;
+import com.example.brokerportal.quoteservice.entities.*;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
 
 public class CoverageMapper {
-
-    public static CoverageDTO toDTO(Coverage coverage) {
+     public static CoverageDTO toDTO(Coverage coverage) {
         if (coverage == null) return null;
 
         return CoverageDTO.builder()
                 .id(coverage.getId())
                 .coverageType(coverage.getCoverageType())
                 .coverageAmount(coverage.getCoverageAmount())
-                .propertyInsuranceId(coverage.getPropertyInsurance() != null ? coverage.getPropertyInsurance().getId() : null)
-                .cyberInsuranceId(coverage.getCyberInsurance() != null ? coverage.getCyberInsurance().getId() : null)
-                .employeeInsuranceId(coverage.getEmployeeInsurance() != null ? coverage.getEmployeeInsurance().getId() : null)
+                .quoteInsuranceId(coverage.getQuoteInsurance() != null ? coverage.getQuoteInsurance().getId() : null)
                 .build();
     }
 
-    public static Coverage toEntity(
-            CoverageDTO dto,
-            PropertyInsurance propertyInsurance,
-            CyberInsurance cyberInsurance,
-            EmployeeInsurance employeeInsurance
-    ) {
+    public static Coverage toEntity(CoverageDTO dto, QuoteInsurance quoteInsurance) {
         if (dto == null) return null;
 
-        return Coverage.builder()
-                .id(dto.getId())
-                .coverageType(dto.getCoverageType())
-                .description(dto.getDescription())
-                .coverageAmount(dto.getCoverageAmount())
-                .propertyInsurance(propertyInsurance)
-                .cyberInsurance(cyberInsurance)
-                .employeeInsurance(employeeInsurance)
-                .build();
+        Coverage coverage = new Coverage();
+        coverage.setId(dto.getId());
+        coverage.setCoverageType(dto.getCoverageType());
+        coverage.setCoverageAmount(dto.getCoverageAmount());
+        coverage.setDescription(dto.getDescription());
+        coverage.setQuoteInsurance(quoteInsurance); // ✅ Only this link now
+        return coverage;
+    }
+    public static List<Coverage> updateCoverageList(List<Coverage> existingCoverages, List<CoverageDTO> incomingDtos, QuoteInsurance parentQuoteInsurance) {
+        Map<Long, Coverage> existingMap = existingCoverages.stream()
+                .filter(c -> c.getId() != null)
+                .collect(Collectors.toMap(Coverage::getId, c -> c));
+
+        Set<Long> incomingIds = new HashSet<>();
+        List<Coverage> finalList = new ArrayList<>();
+
+        for (CoverageDTO dto : incomingDtos) {
+            if (dto.getId() != null && existingMap.containsKey(dto.getId())) {
+                Coverage existing = existingMap.get(dto.getId());
+                existing.setCoverageType(dto.getCoverageType());
+                existing.setCoverageAmount(dto.getCoverageAmount());
+                existing.setDescription(dto.getDescription());
+                finalList.add(existing);
+                incomingIds.add(dto.getId());
+            } else {
+                Coverage newCov = CoverageMapper.toEntity(dto, parentQuoteInsurance);                finalList.add(newCov);
+            }
+        }
+
+        // Remove orphaned ones (not in incoming)
+        existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
+
+        return finalList;
     }
 }

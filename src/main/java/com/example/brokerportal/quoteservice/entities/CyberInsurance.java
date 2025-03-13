@@ -49,8 +49,7 @@ public class CyberInsurance {
 
     @Column(name = "industry_type", length = 100)
     private String industryType;
-    @OneToMany(mappedBy = "cyberInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Coverage> coverages;
+
 
     @OneToOne(mappedBy = "cyberInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
     private Premium premium;

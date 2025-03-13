@@ -3,6 +3,9 @@ package com.example.brokerportal.quoteservice.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "quote_insurances")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -13,6 +16,9 @@ public class QuoteInsurance {
 
     private String insuranceType; // GENERAL, CYBER, PROPERTY, EMPLOYEE, etc.
     private boolean isSelected;
+
+    @OneToMany(mappedBy = "quoteInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Coverage> coverages = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quote_id")

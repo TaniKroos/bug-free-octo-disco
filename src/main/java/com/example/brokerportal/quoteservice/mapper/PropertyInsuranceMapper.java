@@ -19,11 +19,6 @@ public class PropertyInsuranceMapper {
                 .location(entity.getLocation())
                 .area(entity.getArea())
                 .valuation(entity.getValuation())
-                .coverages(entity.getCoverages() != null
-                        ? entity.getCoverages().stream()
-                        .map(CoverageMapper::toDTO)
-                        .collect(Collectors.toList())
-                        : null)
                 .premium(entity.getPremium() != null
                         ? PremiumMapper.toDTO(entity.getPremium())
                         : null)
@@ -41,18 +36,14 @@ public class PropertyInsuranceMapper {
                 .valuation(dto.getValuation())
                 .build();
 
-        // Map and set coverages
-        if (dto.getCoverages() != null) {
-            List<Coverage> coverages = dto.getCoverages().stream()
-                    .map(coverageDto -> {
-                        Coverage coverage = CoverageMapper.toEntity(coverageDto, entity, null, null);
-                        return coverage;
-                    })
-                    .collect(Collectors.toList());
-            entity.setCoverages(coverages);
-        }
+//        if (dto.getCoverages() != null) {
+//            List<Coverage> coverages = dto.getCoverages().stream()
+//                    .map(coverageDto -> CoverageMapper.toEntity(coverageDto, entity.getQuoteInsurance()))
+//                    .collect(Collectors.toList());
+//            entity.setCoverages(coverages);
+//        }
 
-        // Map and set premium
+        // ✅ Map Premium
         if (dto.getPremium() != null) {
             Premium premium = PremiumMapper.toEntity(dto.getPremium());
             premium.setPropertyInsurance(entity);

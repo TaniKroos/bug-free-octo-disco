@@ -16,8 +16,7 @@ public class EmployeeInsurance {
     private Integer numberOfEmployees;
     private String riskLevel;
     private String workerType;
-    @OneToMany(mappedBy = "employeeInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Coverage> coverages;
+
 
     @OneToOne(mappedBy = "employeeInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
     private Premium premium;

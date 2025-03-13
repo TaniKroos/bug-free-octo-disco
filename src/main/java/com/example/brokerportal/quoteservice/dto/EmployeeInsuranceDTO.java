@@ -14,6 +14,6 @@ public class EmployeeInsuranceDTO {
     private String riskLevel;
     private String workerType;
 
-    private List<CoverageDTO> coverages;
+
     private PremiumDTO premium;
 }

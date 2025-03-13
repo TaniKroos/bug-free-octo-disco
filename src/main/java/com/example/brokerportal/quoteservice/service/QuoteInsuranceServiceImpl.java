@@ -50,6 +50,7 @@ public class QuoteInsuranceServiceImpl implements QuoteInsuranceService {
         } else {
             quote.getInsurances().clear();
         }
+
         quote.getInsurances().addAll(insuranceEntities);
         List<QuoteInsurance> savedEntities = quoteInsuranceRepository.saveAll(insuranceEntities);
 
@@ -80,8 +81,8 @@ public class QuoteInsuranceServiceImpl implements QuoteInsuranceService {
                 cyberInsuranceRepository.save(existing);
                 insuranceEntity.setCyberInsurance(existing);
             } else {
-                CyberInsurance newCyber = CyberInsuranceMapper.toEntity(dto.getCyberInsurance());
-                newCyber.setQuoteInsurance(insuranceEntity);
+                // 🔥 FIX: Updated to match new CyberInsuranceMapper.toEntity(dto, quoteInsurance)
+                CyberInsurance newCyber = CyberInsuranceMapper.toEntity(dto.getCyberInsurance(), insuranceEntity);
                 insuranceEntity.setCyberInsurance(newCyber);
             }
         }
