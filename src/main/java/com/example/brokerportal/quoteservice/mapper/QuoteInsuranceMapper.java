@@ -15,7 +15,7 @@ public class QuoteInsuranceMapper {
                 .id(entity.getId())
                 .insuranceType(entity.getInsuranceType())
                 .isSelected(entity.isSelected())
-                .propertyInsurance(PropertyInsuranceMapper.toDTO(entity.getPropertyInsurance()))
+                .propertyInsurance(PropertyInsuranceMapper.toDTO(entity.getPropertyInsurance(),entity.getCoverages()))
                 .cyberInsurance(CyberInsuranceMapper.toDTO(entity.getCyberInsurance(), entity.getCoverages()))
                 .employeeInsurance(EmployeeInsuranceMapper.toDTO(entity.getEmployeeInsurance()))
                 .build();

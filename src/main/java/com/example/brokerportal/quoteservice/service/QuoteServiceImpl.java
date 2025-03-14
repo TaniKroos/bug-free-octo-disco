@@ -12,10 +12,7 @@ import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
-import com.example.brokerportal.quoteservice.repositories.ClientRepository;
-import com.example.brokerportal.quoteservice.repositories.CyberInsuranceRepository;
-import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceRepository;
-import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
+import com.example.brokerportal.quoteservice.repositories.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -38,6 +35,7 @@ public class QuoteServiceImpl implements QuoteService{
     private final QuoteInsuranceRepository quoteInsuranceRepository;
     private final QuoteInsuranceServiceImpl quoteInsuranceService;
     private final CyberInsuranceRepository cyberInsuranceRepository;
+    private final PropertyInsuranceRepository propertyInsuranceRepository;
     @Override
     @Transactional
     public QuoteDTO createQuote(QuoteDTO quoteDTO){
@@ -138,6 +136,11 @@ public class QuoteServiceImpl implements QuoteService{
                         && quoteInsurance.getCyberInsurance() != null) {
                     quoteInsurance.getCyberInsurance().setDeleted(true);
                     cyberInsuranceRepository.save(quoteInsurance.getCyberInsurance());
+                }
+                if ("PROPERTY".equalsIgnoreCase(quoteInsurance.getInsuranceType())
+                        && quoteInsurance.getPropertyInsurance() != null) {
+                    quoteInsurance.getPropertyInsurance().setDeleted(true);
+                    propertyInsuranceRepository.save(quoteInsurance.getPropertyInsurance());
                 }
 
                 // 🔸 Add similar logic here for PROPERTY, EMPLOYEE, etc., when those are implemented

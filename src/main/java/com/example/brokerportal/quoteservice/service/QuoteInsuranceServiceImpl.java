@@ -2,6 +2,7 @@ package com.example.brokerportal.quoteservice.service;
 
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.CyberInsurance;
+import com.example.brokerportal.quoteservice.entities.PropertyInsurance;
 import com.example.brokerportal.quoteservice.entities.Quote;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 import com.example.brokerportal.quoteservice.mapper.CyberInsuranceMapper;
@@ -9,6 +10,7 @@ import com.example.brokerportal.quoteservice.mapper.EmployeeInsuranceMapper;
 import com.example.brokerportal.quoteservice.mapper.PropertyInsuranceMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteInsuranceMapper;
 import com.example.brokerportal.quoteservice.repositories.CyberInsuranceRepository;
+import com.example.brokerportal.quoteservice.repositories.PropertyInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class QuoteInsuranceServiceImpl implements QuoteInsuranceService {
 
     private final QuoteInsuranceRepository quoteInsuranceRepository;
     private final CyberInsuranceRepository cyberInsuranceRepository;
+    private final PropertyInsuranceRepository propertyInsuranceRepository;
 
     @Override
     @Transactional
@@ -89,10 +92,30 @@ public class QuoteInsuranceServiceImpl implements QuoteInsuranceService {
     }
 
     private void handlePropertyInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
-        if (dto.getPropertyInsurance() != null) {
-            insuranceEntity.setPropertyInsurance(
-                    PropertyInsuranceMapper.toEntity(dto.getPropertyInsurance())
-            );
+        if (!"PROPERTY".equalsIgnoreCase(dto.getInsuranceType())) return;
+
+        if (!dto.isSelected()) {
+            if (insuranceEntity.getPropertyInsurance() != null) {
+                insuranceEntity.getPropertyInsurance().setDeleted(true);
+                propertyInsuranceRepository.save(insuranceEntity.getPropertyInsurance());
+            }
+            insuranceEntity.setPropertyInsurance(null);
+        } else {
+            // Try restoring existing soft-deleted CyberInsurance linked to this QuoteInsurance
+            PropertyInsurance existing = propertyInsuranceRepository
+                    .findByQuoteInsuranceIdAndDeletedTrue(insuranceEntity.getId())
+                    .orElse(null);
+
+            if (existing != null) {
+                existing.setDeleted(false);
+                existing.setQuoteInsurance(insuranceEntity);
+                propertyInsuranceRepository.save(existing);
+                insuranceEntity.setPropertyInsurance(existing);
+            } else {
+                // 🔥 FIX: Updated to match new CyberInsuranceMapper.toEntity(dto, quoteInsurance)
+                PropertyInsurance newPropertyInsurance = PropertyInsuranceMapper.toEntity(dto.getPropertyInsurance(), insuranceEntity);
+                insuranceEntity.setPropertyInsurance(newPropertyInsurance);
+            }
         }
     }
 
