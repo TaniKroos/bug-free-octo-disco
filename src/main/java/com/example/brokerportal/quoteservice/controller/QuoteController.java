@@ -33,7 +33,11 @@ public class QuoteController {
         QuoteDTO updatedQuote = quoteService.updateQuote(id, quoteDTO);
         return ResponseEntity.ok(updatedQuote);
     }
-
+    @GetMapping("/all-deleted")
+    public ResponseEntity<List<QuoteDTO>> getDeletedQuotesByClientName( ) {
+        List<QuoteDTO> quotes = quoteService.findByBrokerIdAndDeletedTrue();
+        return ResponseEntity.ok(quotes);
+    }
      // Get Quote by ID
     @GetMapping("/{id}")
     public ResponseEntity<QuoteDTO> getQuoteById(@PathVariable Long id) {
@@ -43,9 +47,9 @@ public class QuoteController {
 
     // Soft Delete Quote
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteQuote(@PathVariable Long id) {
+    public ResponseEntity<String> softDeleteQuote(@PathVariable Long id) {
         quoteService.softDeleteQuote(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Quote with ID " + id + " has been soft deleted along with its insurances.");
     }
     @GetMapping("/by-broker")
     public ResponseEntity<List<QuoteDTO>> getQuoteByBrokerId(){

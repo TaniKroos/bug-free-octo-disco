@@ -35,6 +35,17 @@ public class PremiumMapper {
         // NOTE: Insurance and Quote references should be set from service layer or externally
         return premium;
     }
+    public static Premium updateOrCreatePremium(PremiumDTO dto, Premium existingPremium) {
+        if (dto == null) return null;
 
+        if (existingPremium != null) {
+            existingPremium.setBasePremium(dto.getBasePremium());
+            existingPremium.setTaxes(dto.getTaxes());
+            existingPremium.setTotalPremium(dto.getTotalPremium());
+            return existingPremium;
+        } else {
+            return toEntity(dto);
+        }
+    }
 
 }

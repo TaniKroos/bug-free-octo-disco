@@ -69,16 +69,16 @@ public class CyberInsuranceMapper {
             cyberInsurance.setPremium(premium);
         }
 
-        // ✅ Coverages will be created and added directly to quoteInsurance externally
+        //  Coverages will be created and added directly to quoteInsurance externally
         return cyberInsurance;
     }
 
-    private static List<CoverageDTO> toCoverageDtoList(List<Coverage> coverages) {
-        if (coverages == null) return null;
-        return coverages.stream()
-                .map(CoverageMapper::toDTO)
-                .collect(Collectors.toList());
-    }
+//    private static List<CoverageDTO> toCoverageDtoList(List<Coverage> coverages) {
+//        if (coverages == null) return null;
+//        return coverages.stream()
+//                .map(CoverageMapper::toDTO)
+//                .collect(Collectors.toList());
+//    }
 
     public static void updateEntityFromDTO(CyberInsurance entity, CyberInsuranceDTO dto, QuoteInsurance quoteInsurance) {
         if (dto == null || entity == null) return;
@@ -97,57 +97,15 @@ public class CyberInsuranceMapper {
         entity.setIndustryType(dto.getIndustryType());
 
         // ✅ Update Coverages in QuoteInsurance
-        if (dto.getCoverages() != null) {
-            Map<Long, Coverage> existingMap = quoteInsurance.getCoverages().stream()
-                    .filter(c -> c.getId() != null)
-                    .collect(Collectors.toMap(Coverage::getId, c -> c));
+        CoverageMapper.updateCoveragesInQuoteInsurance(dto.getCoverages(), quoteInsurance);
 
-            Set<Long> incomingIds = new HashSet<>();
-
-            for (CoverageDTO covDto : dto.getCoverages()) {
-                if (covDto.getId() != null && existingMap.containsKey(covDto.getId())) {
-                    // Update existing
-                    Coverage existing = existingMap.get(covDto.getId());
-                    existing.setCoverageType(covDto.getCoverageType());
-                    existing.setCoverageAmount(covDto.getCoverageAmount());
-                    existing.setDescription(covDto.getDescription());
-                    incomingIds.add(covDto.getId());
-                } else {
-                    // Add new
-                    Coverage newCoverage = CoverageMapper.toEntity(covDto, quoteInsurance);
-                    quoteInsurance.getCoverages().add(newCoverage);
-                }
-            }
-
-            // Remove stale ones
-            Iterator<Coverage> iterator = quoteInsurance.getCoverages().iterator();
-            while (iterator.hasNext()) {
-                Coverage coverage = iterator.next();
-                if (coverage.getId() != null && !incomingIds.contains(coverage.getId())) {
-                    iterator.remove(); // orphan removal
-                }
-            }
-        }
 
         // ✅ Premium update
         if (dto.getPremium() != null) {
-            PremiumDTO premiumDTO = dto.getPremium();
-            Premium premium = entity.getPremium();
-
-            if (premium != null) {
-                if (!Objects.equals(premium.getBasePremium(), premiumDTO.getBasePremium())) {
-                    premium.setBasePremium(premiumDTO.getBasePremium());
-                }
-                if (!Objects.equals(premium.getTaxes(), premiumDTO.getTaxes())) {
-                    premium.setTaxes(premiumDTO.getTaxes());
-                }
-                if (!Objects.equals(premium.getTotalPremium(), premiumDTO.getTotalPremium())) {
-                    premium.setTotalPremium(premiumDTO.getTotalPremium());
-                }
-            } else {
-                Premium newPremium = PremiumMapper.toEntity(premiumDTO);
-                newPremium.setCyberInsurance(entity);
-                entity.setPremium(newPremium);
+            Premium updatedOrNew = PremiumMapper.updateOrCreatePremium(dto.getPremium(), entity.getPremium());
+            if (entity.getPremium() == null) {
+                updatedOrNew.setCyberInsurance(entity); // link only here!
+                entity.setPremium(updatedOrNew);
             }
         }
     }

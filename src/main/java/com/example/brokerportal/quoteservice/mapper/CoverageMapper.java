@@ -56,4 +56,36 @@ public class CoverageMapper {
 
         return finalList;
     }
+    public static void updateCoveragesInQuoteInsurance(List<CoverageDTO> coverageDTOs, QuoteInsurance quoteInsurance) {
+        if (coverageDTOs == null) return;
+
+        Map<Long, Coverage> existingMap = quoteInsurance.getCoverages().stream()
+                .filter(c -> c.getId() != null)
+                .collect(Collectors.toMap(Coverage::getId, c -> c));
+
+        Set<Long> incomingIds = new HashSet<>();
+
+        for (CoverageDTO dto : coverageDTOs) {
+            if (dto.getId() != null && existingMap.containsKey(dto.getId())) {
+                Coverage existing = existingMap.get(dto.getId());
+                existing.setCoverageType(dto.getCoverageType());
+                existing.setCoverageAmount(dto.getCoverageAmount());
+                existing.setDescription(dto.getDescription());
+                incomingIds.add(dto.getId());
+            } else {
+                Coverage newCov = toEntity(dto, quoteInsurance);
+                quoteInsurance.getCoverages().add(newCov);
+            }
+        }
+
+        // Remove stale coverages
+        Iterator<Coverage> iterator = quoteInsurance.getCoverages().iterator();
+        while (iterator.hasNext()) {
+            Coverage coverage = iterator.next();
+            if (coverage.getId() != null && !incomingIds.contains(coverage.getId())) {
+                iterator.remove();
+            }
+        }
+    }
+
 }

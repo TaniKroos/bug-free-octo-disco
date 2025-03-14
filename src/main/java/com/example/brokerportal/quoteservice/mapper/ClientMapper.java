@@ -21,7 +21,6 @@ public class ClientMapper {
         if (dto == null) return null;
 
         return Client.builder()
-                .id(dto.getId())
                 .clientName(dto.getClientName())
                 .email(dto.getEmail())
                 .contactNumber(dto.getContactNumber())

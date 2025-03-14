@@ -10,6 +10,6 @@ public interface QuoteService {
     List<QuoteDTO> getQuotesByBrokerId();
     QuoteDTO getQuoteById(Long id);
     void softDeleteQuote(Long id);
-
+    List<QuoteDTO> findByBrokerIdAndDeletedTrue();
 
 }

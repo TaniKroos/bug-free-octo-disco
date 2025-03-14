@@ -3,11 +3,13 @@ package com.example.brokerportal.quoteservice.service;
 import com.example.brokerportal.authservice.entities.User;
 import com.example.brokerportal.authservice.repository.UserRepository;
 import com.example.brokerportal.authservice.service.UserService;
+import com.example.brokerportal.quoteservice.dto.ClientDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.Client;
 import com.example.brokerportal.quoteservice.entities.Quote;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
+import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
 import com.example.brokerportal.quoteservice.repositories.ClientRepository;
@@ -51,16 +53,8 @@ public class QuoteServiceImpl implements QuoteService{
         quote.setBroker(userService.getCurrentUser()); // ✅ correct place
 
         if (quoteDTO.getClient() != null) {
-            Client client;
-            if (quoteDTO.getClient().getId() != null) {
-                // Existing client case
-                client = clientRepository.findById(quoteDTO.getClient().getId())
-                        .orElseThrow(() -> new RuntimeException("Client not found with id: " + quoteDTO.getClient().getId()));
-            } else {
-                // New client — create from DTO
-                client = ClientMapper.toEntity(quoteDTO.getClient());
-                client = clientRepository.save(client);
-            }
+            Client client = ClientMapper.toEntity(quoteDTO.getClient());
+            client = clientRepository.save(client); // ID is auto-generated here
             quote.setClient(client);
         }
         Quote saved = quoteRepository.save(quote);
@@ -79,7 +73,9 @@ public class QuoteServiceImpl implements QuoteService{
                 .orElseThrow(() -> new RuntimeException("Quote with this id:" + id + " doesn't exist in the database"));
 
         authorizeBrokerAccess(quote);
-
+        if(quote.isDeleted()){
+            throw new ResourceNotFoundException("QUote with this id has been marked soft deleted");
+        }
 
         return QuoteMapper.toDTO(quote);
     }
@@ -95,7 +91,12 @@ public class QuoteServiceImpl implements QuoteService{
 
 
         authorizeBrokerAccess(quote);
-
+        if(quote.isDeleted()){
+            throw new ResourceNotFoundException("Quote with this id is deleted");
+        }
+        if (updatedQuoteDto.getClient() != null) {
+            updateClientDetails(quote.getClient(), updatedQuoteDto.getClient());
+        }
 
         if (updatedQuoteDto.getStatus() != null) {
             quote.setStatus(updatedQuoteDto.getStatus());
@@ -111,6 +112,12 @@ public class QuoteServiceImpl implements QuoteService{
         return QuoteMapper.toDTO(updatedQuote);
     }
 
+    public List<QuoteDTO> findByBrokerIdAndDeletedTrue(){
+        Long userId = userService.getCurrentUser().getId();
+        List<Quote> quotes = quoteRepository.findByBrokerIdAndDeletedTrue(userId);
+        return quotes.stream().map(QuoteMapper::toDTO).collect(Collectors.toList());
+    }
+
     @Override
     @Transactional
     public void softDeleteQuote(Long id) {
@@ -120,7 +127,26 @@ public class QuoteServiceImpl implements QuoteService{
 
         quote.setDeleted(true);
         quote.setUpdatedAt(LocalDateTime.now());
+
+        // 2. Soft delete all quote_insurance entities linked to this quote
+        if (quote.getInsurances() != null && !quote.getInsurances().isEmpty()) {
+            for (QuoteInsurance quoteInsurance : quote.getInsurances()) {
+                quoteInsurance.setSelected(false); // soft delete quote_insurance
+
+                // 3. Soft delete CYBER insurance if exists
+                if ("CYBER".equalsIgnoreCase(quoteInsurance.getInsuranceType())
+                        && quoteInsurance.getCyberInsurance() != null) {
+                    quoteInsurance.getCyberInsurance().setDeleted(true);
+                    cyberInsuranceRepository.save(quoteInsurance.getCyberInsurance());
+                }
+
+                // 🔸 Add similar logic here for PROPERTY, EMPLOYEE, etc., when those are implemented
+            }
+        }
+
+        // 4. Save the quote (cascades QuoteInsurance soft delete if mapped with CascadeType.ALL)
         quoteRepository.save(quote);
+
     }
 
     @Override
@@ -151,15 +177,16 @@ public class QuoteServiceImpl implements QuoteService{
                 boolean selected = selectionMap.get(insuranceType);
                 qi.setSelected(selected);
 
-                // 🔥 Restore soft-deleted cyber insurance if selected = true
-                if ("CYBER".equalsIgnoreCase(insuranceType)
-                        && selected
-                        && qi.getCyberInsurance() != null
-                        && Boolean.TRUE.equals(qi.getCyberInsurance().getDeleted())) {
-
-                    qi.getCyberInsurance().setDeleted(false);
-                    // ⚠️ Important: you must save the CyberInsurance here, otherwise change is lost
-                    cyberInsuranceRepository.save(qi.getCyberInsurance());
+                if ("CYBER".equalsIgnoreCase(insuranceType) && qi.getCyberInsurance() != null) {
+                    if (selected && Boolean.TRUE.equals(qi.getCyberInsurance().getDeleted())) {
+                        // Restore CyberInsurance
+                        qi.getCyberInsurance().setDeleted(false);
+                        cyberInsuranceRepository.save(qi.getCyberInsurance());
+                    } else if (!selected && Boolean.FALSE.equals(qi.getCyberInsurance().getDeleted())) {
+                        // Soft delete CyberInsurance
+                        qi.getCyberInsurance().setDeleted(true);
+                        cyberInsuranceRepository.save(qi.getCyberInsurance());
+                    }
                 }
             }
         }
@@ -177,4 +204,25 @@ public class QuoteServiceImpl implements QuoteService{
             }
         });
     }
+
+
+    private void updateClientDetails(Client client, ClientDTO updatedClientDto) {
+        if (client == null) return;
+
+        if (updatedClientDto.getClientName() != null) {
+            client.setClientName(updatedClientDto.getClientName());
+        }
+        if (updatedClientDto.getEmail() != null) {
+            client.setEmail(updatedClientDto.getEmail());
+        }
+        if (updatedClientDto.getContactNumber() != null) {
+            client.setContactNumber(updatedClientDto.getContactNumber());
+        }
+        if (updatedClientDto.getAddress() != null) {
+            client.setAddress(updatedClientDto.getAddress());
+        }
+
+        clientRepository.save(client); // ✅ Save updated client
+    }
+
 }
