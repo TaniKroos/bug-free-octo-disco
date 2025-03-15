@@ -7,6 +7,7 @@ import com.example.brokerportal.quoteservice.dto.ClientDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.Client;
+import com.example.brokerportal.quoteservice.entities.GeneralLiabilityInsurance;
 import com.example.brokerportal.quoteservice.entities.Quote;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
@@ -36,6 +37,7 @@ public class QuoteServiceImpl implements QuoteService{
     private final QuoteInsuranceServiceImpl quoteInsuranceService;
     private final CyberInsuranceRepository cyberInsuranceRepository;
     private final PropertyInsuranceRepository propertyInsuranceRepository;
+    private final GeneralLiabilityInsuranceRepository generalInsuranceRepository;
     @Override
     @Transactional
     public QuoteDTO createQuote(QuoteDTO quoteDTO){
@@ -142,7 +144,11 @@ public class QuoteServiceImpl implements QuoteService{
                     quoteInsurance.getPropertyInsurance().setDeleted(true);
                     propertyInsuranceRepository.save(quoteInsurance.getPropertyInsurance());
                 }
-
+                if ("GENERAL".equalsIgnoreCase(quoteInsurance.getInsuranceType())
+                        && quoteInsurance.getGeneralInsurance() != null) {
+                    quoteInsurance.getGeneralInsurance().setDeleted(true);
+                    generalInsuranceRepository.save(quoteInsurance.getGeneralInsurance());
+                }
                 // 🔸 Add similar logic here for PROPERTY, EMPLOYEE, etc., when those are implemented
             }
         }
@@ -191,7 +197,26 @@ public class QuoteServiceImpl implements QuoteService{
                         cyberInsuranceRepository.save(qi.getCyberInsurance());
                     }
                 }
-            }
+                if ("PROPERTY".equalsIgnoreCase(insuranceType) && qi.getPropertyInsurance() != null) {
+                    if (selected && Boolean.TRUE.equals(qi.getPropertyInsurance().getDeleted())) {
+                        qi.getPropertyInsurance().setDeleted(false);
+                        propertyInsuranceRepository.save(qi.getPropertyInsurance());
+                    } else if (!selected && Boolean.FALSE.equals(qi.getPropertyInsurance().getDeleted())) {
+                        qi.getPropertyInsurance().setDeleted(true);
+                        propertyInsuranceRepository.save(qi.getPropertyInsurance());
+                    }
+                }
+
+                if ("GENERAL".equalsIgnoreCase(insuranceType) && qi.getGeneralInsurance() != null) {
+                    if (selected && Boolean.TRUE.equals(qi.getGeneralInsurance().getDeleted())) {
+                        qi.getGeneralInsurance().setDeleted(false);
+                        generalInsuranceRepository.save(qi.getGeneralInsurance());
+                    } else if (!selected && Boolean.FALSE.equals(qi.getGeneralInsurance().getDeleted())) {
+                        qi.getGeneralInsurance().setDeleted(true);
+                        generalInsuranceRepository.save(qi.getGeneralInsurance());
+                    }
+                }
+        }
         }
 
         // Add new insurance types if they don’t exist

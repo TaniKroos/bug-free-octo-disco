@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/quotes/**").authenticated()
                         .requestMatchers("/api/cyber-insurance/**").authenticated()
                         .requestMatchers("/api/property-insurance/**").authenticated()
+                        .requestMatchers("/api/general-liability-insurance/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

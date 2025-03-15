@@ -13,5 +13,5 @@ public class QuoteInsuranceDTO {
 
     private PropertyInsuranceDTO propertyInsurance;
     private CyberInsuranceDTO cyberInsurance;
-    private EmployeeInsuranceDTO employeeInsurance;
+    private GeneralLiabilityInsuranceDTO generalInsurance;
 }

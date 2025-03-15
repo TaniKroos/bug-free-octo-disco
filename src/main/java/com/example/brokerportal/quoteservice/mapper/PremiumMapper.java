@@ -2,6 +2,7 @@ package com.example.brokerportal.quoteservice.mapper;
 
 import com.example.brokerportal.quoteservice.dto.PremiumDTO;
 import com.example.brokerportal.quoteservice.entities.Premium;
+import lombok.Data;
 
 
 public class PremiumMapper {
@@ -18,7 +19,7 @@ public class PremiumMapper {
                 .quoteInsuranceId(premium.getQuoteInsurance() != null ? premium.getQuoteInsurance().getId() : null)
                 .propertyInsuranceId(premium.getPropertyInsurance() != null ? premium.getPropertyInsurance().getId() : null)
                 .cyberInsuranceId(premium.getCyberInsurance() != null ? premium.getCyberInsurance().getId() : null)
-                .employeeInsuranceId(premium.getEmployeeInsurance() != null ? premium.getEmployeeInsurance().getId() : null)
+                .generalInsuranceId(premium.getGeneralInsurance() != null ? premium.getGeneralInsurance().getId() : null)
                 .build();
     }
 

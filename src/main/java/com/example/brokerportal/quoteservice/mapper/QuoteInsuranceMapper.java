@@ -2,9 +2,6 @@ package com.example.brokerportal.quoteservice.mapper;
 
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
-import com.example.brokerportal.quoteservice.entities.PropertyInsurance;
-import com.example.brokerportal.quoteservice.entities.CyberInsurance;
-import com.example.brokerportal.quoteservice.entities.EmployeeInsurance;
 
 public class QuoteInsuranceMapper {
 
@@ -17,7 +14,7 @@ public class QuoteInsuranceMapper {
                 .isSelected(entity.isSelected())
                 .propertyInsurance(PropertyInsuranceMapper.toDTO(entity.getPropertyInsurance(),entity.getCoverages()))
                 .cyberInsurance(CyberInsuranceMapper.toDTO(entity.getCyberInsurance(), entity.getCoverages()))
-                .employeeInsurance(EmployeeInsuranceMapper.toDTO(entity.getEmployeeInsurance()))
+                .generalInsurance(GeneralLiabilityInsuranceMapper.toDTO(entity.getGeneralInsurance(),entity.getCoverages()))
                 .build();
     }
 

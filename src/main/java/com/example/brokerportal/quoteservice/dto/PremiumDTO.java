@@ -16,7 +16,7 @@ public class PremiumDTO {
 
     private Long propertyInsuranceId;
     private Long cyberInsuranceId;
-    private Long employeeInsuranceId;
+    private Long generalInsuranceId;
 }
 
 

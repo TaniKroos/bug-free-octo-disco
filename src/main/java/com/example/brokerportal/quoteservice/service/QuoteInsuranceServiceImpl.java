@@ -6,7 +6,6 @@ import com.example.brokerportal.quoteservice.entities.PropertyInsurance;
 import com.example.brokerportal.quoteservice.entities.Quote;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 import com.example.brokerportal.quoteservice.mapper.CyberInsuranceMapper;
-import com.example.brokerportal.quoteservice.mapper.EmployeeInsuranceMapper;
 import com.example.brokerportal.quoteservice.mapper.PropertyInsuranceMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteInsuranceMapper;
 import com.example.brokerportal.quoteservice.repositories.CyberInsuranceRepository;
@@ -119,11 +118,11 @@ public class QuoteInsuranceServiceImpl implements QuoteInsuranceService {
         }
     }
 
-    private void handleEmployeeInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
-        if (dto.getEmployeeInsurance() != null) {
-            insuranceEntity.setEmployeeInsurance(
-                    EmployeeInsuranceMapper.toEntity(dto.getEmployeeInsurance())
-            );
-        }
-    }
+//    private void handleEmployeeInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
+//        if (dto.getEmployeeInsurance() != null) {
+//            insuranceEntity.setEmployeeInsurance(
+//                    EmployeeInsuranceMapper.toEntity(dto.getEmployeeInsurance())
+//            );
+//        }
+//    }
 }

@@ -10,6 +10,6 @@ import java.util.List;
 public interface PremiumRepository extends JpaRepository<Premium, Long> {
     List<Premium> findByPropertyInsuranceId(Long propertyInsuranceId);
     List<Premium> findByCyberInsuranceId(Long cyberInsuranceId);
-    List<Premium> findByEmployeeInsuranceId(Long employeeInsuranceId);
+    List<Premium> findByGeneralInsuranceId(Long employeeInsuranceId);
     List<Premium> findByQuoteId(Long quoteId);
 }

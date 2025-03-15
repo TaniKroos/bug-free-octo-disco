@@ -31,5 +31,5 @@ public class QuoteInsurance {
     private CyberInsurance cyberInsurance;
 
     @OneToOne(mappedBy = "quoteInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private EmployeeInsurance employeeInsurance;
+    private GeneralLiabilityInsurance generalInsurance;
 }

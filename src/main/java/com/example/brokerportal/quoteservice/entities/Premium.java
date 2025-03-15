@@ -34,10 +34,10 @@ public class Premium {
     @JoinColumn(name = "cyber_insurance_id")
     private CyberInsurance cyberInsurance;
 
-    // Premium mapped to EmployeeInsurance (optional)
+    // Premium mapped to general_liability_insurance (optional)
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_insurance_id")
-    private EmployeeInsurance employeeInsurance;
+    @JoinColumn(name = "general_liability_insurance")
+    private GeneralLiabilityInsurance generalInsurance;
 
     // Optional: Link back to QuoteInsurance (if needed globally)
     @ManyToOne(fetch = FetchType.LAZY)
