@@ -12,6 +12,7 @@ import com.example.brokerportal.quoteservice.mapper.PremiumMapper;
 import com.example.brokerportal.quoteservice.repositories.CyberInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
+import com.example.brokerportal.quoteservice.utils.InsuranceMapperUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,30 +56,21 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
         }
 
         // Convert DTO to Entity (excluding coverage mapping here)
-        CyberInsurance entity = CyberInsuranceMapper.toEntity(dto,quoteInsurance);
-        entity.setQuoteInsurance(quoteInsurance);
+        CyberInsurance cyberEntity = CyberInsuranceMapper.toEntity(dto,quoteInsurance);
 
-        // Map Premium (if present)
-        if (dto.getPremium() != null) {
-            Premium premium = PremiumMapper.toEntity(dto.getPremium());
-            premium.setCyberInsurance(entity);
-            entity.setPremium(premium);
-        }
+        InsuranceMapperUtil.mapPremiumAndCoverages(
+                cyberEntity,
+                dto.getPremium(),
+                dto.getCoverages(),
+                quoteInsurance,
+                (premium, entity) -> premium.setCyberInsurance((CyberInsurance) entity),
+                QuoteInsurance::setCyberInsurance
+        );
 
-        quoteInsurance.setCyberInsurance(entity);
-
-        // Handle Coverages (must be linked to QuoteInsurance, NOT CyberInsurance)
-        if (dto.getCoverages() != null) {
-            List<Coverage> coverages = dto.getCoverages().stream()
-                    .map(covDto -> CoverageMapper.toEntity(covDto, quoteInsurance))
-                    .collect(Collectors.toList());
-            quoteInsurance.getCoverages().addAll(coverages);
-        }
-
-        cyberInsuranceRepository.save(entity);
+        cyberInsuranceRepository.save(cyberEntity);
         quoteInsuranceRepository.save(quoteInsurance);
 
-        return CyberInsuranceMapper.toDTO(entity,quoteInsurance.getCoverages());
+        return CyberInsuranceMapper.toDTO(cyberEntity,quoteInsurance.getCoverages());
     }
 
     @Override
@@ -100,61 +92,26 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
 
         authorizeBrokerAccess(quoteInsurance);
 
-        CyberInsurance entity = quoteInsurance.getCyberInsurance();
-        if (entity == null) {
+        CyberInsurance cyberEntity = quoteInsurance.getCyberInsurance();
+        if (cyberEntity == null) {
             throw new ResourceNotFoundException("Cyber Insurance not found for this quote.");
         }
 
         // Update CyberInsurance fields
-        CyberInsuranceMapper.updateEntityFromDTO(entity, dto,quoteInsurance);
+        CyberInsuranceMapper.updateEntityFromDTO(cyberEntity, dto,quoteInsurance);
 
-        if (dto.getPremium() != null) {
-            if (entity.getPremium() != null) {
-                Premium premium = entity.getPremium();
-                premium.setBasePremium(dto.getPremium().getBasePremium());
-                premium.setTaxes(dto.getPremium().getTaxes());
-                premium.setTotalPremium(dto.getPremium().getTotalPremium());
+        InsuranceMapperUtil.updatePremiumAndCoverages(
+                cyberEntity,
+                dto.getPremium(),
+                dto.getCoverages(),
+                quoteInsurance,
+                (premium, entity) -> premium.setCyberInsurance((CyberInsurance) entity)
+        );
 
-            } else {
-                Premium newPremium = PremiumMapper.toEntity(dto.getPremium());
-                newPremium.setCyberInsurance(entity);
-                entity.setPremium(newPremium);
-            }
-        }
-
-        // Update Coverages via QuoteInsurance (NOT CyberInsurance)
-        if (dto.getCoverages() != null) {
-            List<Coverage> existingCoverages = quoteInsurance.getCoverages();
-            List<Long> incomingIds = dto.getCoverages().stream()
-                    .map(CoverageDTO::getId)
-                    .collect(Collectors.toList());
-
-            // Update existing coverages
-            for (CoverageDTO covDto : dto.getCoverages()) {
-                if (covDto.getId() != null) {
-                    existingCoverages.stream()
-                            .filter(c -> c.getId().equals(covDto.getId()))
-                            .findFirst()
-                            .ifPresent(c -> {
-                                c.setCoverageType(covDto.getCoverageType());
-                                c.setCoverageAmount(covDto.getCoverageAmount());
-                                c.setDescription(covDto.getDescription());
-                            });
-                } else {
-                    // New coverage
-                    Coverage newCov = CoverageMapper.toEntity(covDto, quoteInsurance);
-                    existingCoverages.add(newCov);
-                }
-            }
-
-            // Remove deleted coverages
-            existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
-        }
-
-        cyberInsuranceRepository.save(entity);
+        cyberInsuranceRepository.save(cyberEntity);
         quoteInsuranceRepository.save(quoteInsurance);
 
-        return CyberInsuranceMapper.toDTO(entity, quoteInsurance.getCoverages());
+        return CyberInsuranceMapper.toDTO(cyberEntity, quoteInsurance.getCoverages());
     }
 
     @Override

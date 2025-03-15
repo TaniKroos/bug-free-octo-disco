@@ -13,6 +13,7 @@ import com.example.brokerportal.quoteservice.mapper.PropertyInsuranceMapper;
 import com.example.brokerportal.quoteservice.repositories.PropertyInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
+import com.example.brokerportal.quoteservice.utils.InsuranceMapperUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,26 +52,20 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
             throw new IllegalStateException("Property Insurance with this quote already exist, Try to hit the update endpoint");
 
         }
-        PropertyInsurance entity = PropertyInsuranceMapper.toEntity(dto,quoteInsurance);
+        PropertyInsurance propertyEntity = PropertyInsuranceMapper.toEntity(dto,quoteInsurance);
 
         // Map premium
-        if(dto.getPremium() != null){
-            Premium premium = PremiumMapper.toEntity(dto.getPremium());
-            premium.setPropertyInsurance(entity);
-            entity.setPremium(premium);
-        }
-        quoteInsurance.setPropertyInsurance(entity);
-
-        // Map coverage
-        if(dto.getCoverages()!=null){
-            List<Coverage> coverages = dto.getCoverages().stream()
-                    .map(coverageDTO -> CoverageMapper.toEntity(coverageDTO,quoteInsurance))
-                    .collect(Collectors.toList());
-            quoteInsurance.getCoverages().addAll(coverages);
-        }
-        propertyInsuranceRepository.save(entity);
+        InsuranceMapperUtil.mapPremiumAndCoverages(
+                propertyEntity,
+                dto.getPremium(),
+                dto.getCoverages(),
+                quoteInsurance,
+                (premium, entity) -> premium.setPropertyInsurance((PropertyInsurance) entity),
+                QuoteInsurance::setPropertyInsurance
+        );
+        propertyInsuranceRepository.save(propertyEntity);
         quoteInsuranceRepository.save(quoteInsurance);
-        return  PropertyInsuranceMapper.toDTO(entity,quoteInsurance.getCoverages());
+        return  PropertyInsuranceMapper.toDTO(propertyEntity,quoteInsurance.getCoverages());
 
     }
     @Override
@@ -92,58 +87,25 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
 
         authorizeBrokerAccess(quoteInsurance);
 
-        PropertyInsurance entity = quoteInsurance.getPropertyInsurance();
-        if (entity == null) {
+        PropertyInsurance propertyEntity = quoteInsurance.getPropertyInsurance();
+        if (propertyEntity == null) {
             throw new ResourceNotFoundException("Property Insurance not found for this quote.");
         }
 
-        PropertyInsuranceMapper.updateEntityFromDTO(entity, dto, quoteInsurance);
+        PropertyInsuranceMapper.updateEntityFromDTO(propertyEntity, dto, quoteInsurance);
 
-        // Update Premium
-        if (dto.getPremium() != null) {
-            if (entity.getPremium() != null) {
-                Premium premium = entity.getPremium();
-                premium.setBasePremium(dto.getPremium().getBasePremium());
-                premium.setTaxes(dto.getPremium().getTaxes());
-                premium.setTotalPremium(dto.getPremium().getTotalPremium());
-            } else {
-                Premium newPremium = PremiumMapper.toEntity(dto.getPremium());
-                newPremium.setPropertyInsurance(entity);
-                entity.setPremium(newPremium);
-            }
-        }
+        InsuranceMapperUtil.updatePremiumAndCoverages(
+                propertyEntity,
+                dto.getPremium(),
+                dto.getCoverages(),
+                quoteInsurance,
+                (premium, entity) -> premium.setPropertyInsurance((PropertyInsurance) propertyEntity)
+        );
 
-        // Update Coverages
-        if (dto.getCoverages() != null) {
-            List<Coverage> existingCoverages = quoteInsurance.getCoverages();
-            List<Long> incomingIds = dto.getCoverages().stream()
-                    .map(CoverageDTO::getId)
-                    .collect(Collectors.toList());
-
-            for (CoverageDTO covDto : dto.getCoverages()) {
-                if (covDto.getId() != null) {
-                    existingCoverages.stream()
-                            .filter(c -> c.getId().equals(covDto.getId()))
-                            .findFirst()
-                            .ifPresent(c -> {
-                                c.setCoverageType(covDto.getCoverageType());
-                                c.setCoverageAmount(covDto.getCoverageAmount());
-                                c.setDescription(covDto.getDescription());
-                            });
-                } else {
-                    Coverage newCov = CoverageMapper.toEntity(covDto, quoteInsurance);
-                    existingCoverages.add(newCov);
-                }
-            }
-
-            // Remove deleted coverages
-            existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
-        }
-
-        propertyInsuranceRepository.save(entity);
+        propertyInsuranceRepository.save(propertyEntity);
         quoteInsuranceRepository.save(quoteInsurance);
 
-        return PropertyInsuranceMapper.toDTO(entity, quoteInsurance.getCoverages());
+        return PropertyInsuranceMapper.toDTO(propertyEntity, quoteInsurance.getCoverages());
     }
 
     // get property insurance

@@ -30,32 +30,32 @@ public class CoverageMapper {
         coverage.setQuoteInsurance(quoteInsurance); // ✅ Only this link now
         return coverage;
     }
-    public static List<Coverage> updateCoverageList(List<Coverage> existingCoverages, List<CoverageDTO> incomingDtos, QuoteInsurance parentQuoteInsurance) {
-        Map<Long, Coverage> existingMap = existingCoverages.stream()
-                .filter(c -> c.getId() != null)
-                .collect(Collectors.toMap(Coverage::getId, c -> c));
-
-        Set<Long> incomingIds = new HashSet<>();
-        List<Coverage> finalList = new ArrayList<>();
-
-        for (CoverageDTO dto : incomingDtos) {
-            if (dto.getId() != null && existingMap.containsKey(dto.getId())) {
-                Coverage existing = existingMap.get(dto.getId());
-                existing.setCoverageType(dto.getCoverageType());
-                existing.setCoverageAmount(dto.getCoverageAmount());
-                existing.setDescription(dto.getDescription());
-                finalList.add(existing);
-                incomingIds.add(dto.getId());
-            } else {
-                Coverage newCov = CoverageMapper.toEntity(dto, parentQuoteInsurance);                finalList.add(newCov);
-            }
-        }
-
-        // Remove orphaned ones (not in incoming)
-        existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
-
-        return finalList;
-    }
+//    public static List<Coverage> updateCoverageList(List<Coverage> existingCoverages, List<CoverageDTO> incomingDtos, QuoteInsurance parentQuoteInsurance) {
+//        Map<Long, Coverage> existingMap = existingCoverages.stream()
+//                .filter(c -> c.getId() != null)
+//                .collect(Collectors.toMap(Coverage::getId, c -> c));
+//
+//        Set<Long> incomingIds = new HashSet<>();
+//        List<Coverage> finalList = new ArrayList<>();
+//
+//        for (CoverageDTO dto : incomingDtos) {
+//            if (dto.getId() != null && existingMap.containsKey(dto.getId())) {
+//                Coverage existing = existingMap.get(dto.getId());
+//                existing.setCoverageType(dto.getCoverageType());
+//                existing.setCoverageAmount(dto.getCoverageAmount());
+//                existing.setDescription(dto.getDescription());
+//                finalList.add(existing);
+//                incomingIds.add(dto.getId());
+//            } else {
+//                Coverage newCov = CoverageMapper.toEntity(dto, parentQuoteInsurance);                finalList.add(newCov);
+//            }
+//        }
+//
+//        // Remove orphaned ones (not in incoming)
+//        existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
+//
+//        return finalList;
+//    }
     public static void updateCoveragesInQuoteInsurance(List<CoverageDTO> coverageDTOs, QuoteInsurance quoteInsurance) {
         if (coverageDTOs == null) return;
 

@@ -12,6 +12,7 @@ import com.example.brokerportal.quoteservice.mapper.PremiumMapper;
 import com.example.brokerportal.quoteservice.repositories.GeneralLiabilityInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteInsuranceRepository;
 import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
+import com.example.brokerportal.quoteservice.utils.InsuranceMapperUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,28 +55,21 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
             throw new IllegalStateException("General Liability Insurance already exists. Use update endpoint.");
         }
 
-        GeneralLiabilityInsurance entity = GeneralLiabilityInsuranceMapper.toEntity(dto, quoteInsurance);
-        entity.setQuoteInsurance(quoteInsurance);
+        GeneralLiabilityInsurance generalEntity = GeneralLiabilityInsuranceMapper.toEntity(dto, quoteInsurance);
 
-        if (dto.getPremium() != null) {
-            Premium premium = PremiumMapper.toEntity(dto.getPremium());
-            premium.setGeneralInsurance(entity);
-            entity.setPremium(premium);
-        }
+        InsuranceMapperUtil.mapPremiumAndCoverages(
+                generalEntity,
+                dto.getPremium(),
+                dto.getCoverages(),
+                quoteInsurance,
+                (premium, entity) -> premium.setGeneralInsurance((GeneralLiabilityInsurance) entity),
+                QuoteInsurance::setGeneralInsurance
+        );
 
-        quoteInsurance.setGeneralInsurance(entity);
-
-        if (dto.getCoverages() != null) {
-            List<Coverage> coverages = dto.getCoverages().stream()
-                    .map(covDto -> CoverageMapper.toEntity(covDto, quoteInsurance))
-                    .collect(Collectors.toList());
-            quoteInsurance.getCoverages().addAll(coverages);
-        }
-
-        generalLiabilityInsuranceRepository.save(entity);
+        generalLiabilityInsuranceRepository.save(generalEntity);
         quoteInsuranceRepository.save(quoteInsurance);
 
-        return GeneralLiabilityInsuranceMapper.toDTO(entity, quoteInsurance.getCoverages());
+        return GeneralLiabilityInsuranceMapper.toDTO(generalEntity, quoteInsurance.getCoverages());
     }
 
     @Override
@@ -97,55 +91,26 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
 
         authorizeBrokerAccess(quoteInsurance);
 
-        GeneralLiabilityInsurance entity = quoteInsurance.getGeneralInsurance();
-        if (entity == null) {
+        GeneralLiabilityInsurance generalEntity = quoteInsurance.getGeneralInsurance();
+        if (generalEntity == null) {
             throw new ResourceNotFoundException("General Liability Insurance not found for this quote.");
         }
 
-        GeneralLiabilityInsuranceMapper.updateEntityFromDTO(entity, dto, quoteInsurance);
+        GeneralLiabilityInsuranceMapper.updateEntityFromDTO(generalEntity, dto, quoteInsurance);
 
-        if (dto.getPremium() != null) {
-            if (entity.getPremium() != null) {
-                Premium premium = entity.getPremium();
-                premium.setBasePremium(dto.getPremium().getBasePremium());
-                premium.setTaxes(dto.getPremium().getTaxes());
-                premium.setTotalPremium(dto.getPremium().getTotalPremium());
-            } else {
-                Premium newPremium = PremiumMapper.toEntity(dto.getPremium());
-                newPremium.setGeneralInsurance(entity);
-                entity.setPremium(newPremium);
-            }
-        }
+        InsuranceMapperUtil.updatePremiumAndCoverages(
+                generalEntity,
+                dto.getPremium(),
+                dto.getCoverages(),
+                quoteInsurance,
+                (premium, entity) -> premium.setGeneralInsurance((GeneralLiabilityInsurance) entity)
+        );
 
-        if (dto.getCoverages() != null) {
-            List<Coverage> existingCoverages = quoteInsurance.getCoverages();
-            List<Long> incomingIds = dto.getCoverages().stream()
-                    .map(CoverageDTO::getId)
-                    .collect(Collectors.toList());
 
-            for (CoverageDTO covDto : dto.getCoverages()) {
-                if (covDto.getId() != null) {
-                    existingCoverages.stream()
-                            .filter(c -> c.getId().equals(covDto.getId()))
-                            .findFirst()
-                            .ifPresent(c -> {
-                                c.setCoverageType(covDto.getCoverageType());
-                                c.setCoverageAmount(covDto.getCoverageAmount());
-                                c.setDescription(covDto.getDescription());
-                            });
-                } else {
-                    Coverage newCov = CoverageMapper.toEntity(covDto, quoteInsurance);
-                    existingCoverages.add(newCov);
-                }
-            }
-
-            existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
-        }
-
-        generalLiabilityInsuranceRepository.save(entity);
+        generalLiabilityInsuranceRepository.save(generalEntity);
         quoteInsuranceRepository.save(quoteInsurance);
 
-        return GeneralLiabilityInsuranceMapper.toDTO(entity, quoteInsurance.getCoverages());
+        return GeneralLiabilityInsuranceMapper.toDTO(generalEntity, quoteInsurance.getCoverages());
     }
 
     @Override
