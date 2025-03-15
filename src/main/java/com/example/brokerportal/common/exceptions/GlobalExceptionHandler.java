@@ -61,4 +61,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiErrorResponse("INTERNAL_ERROR", "Something went wrong. Please try again later."));
     }
+
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<String> handleException(Exception ex) {
+//        ex.printStackTrace(); // Shows full root cause in logs
+//        return ResponseEntity.status(500).body("Error: " + ex.getMessage());
+//    }
 }

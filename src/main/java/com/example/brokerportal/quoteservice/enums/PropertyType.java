@@ -5,5 +5,5 @@ public enum PropertyType {
     WAREHOUSE,
     RETAIL,
     INDUSTRIAL,
-    OTHER
+    COMMERCIAL
 }

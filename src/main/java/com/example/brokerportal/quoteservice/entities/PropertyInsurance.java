@@ -23,11 +23,13 @@ public class PropertyInsurance {
     private String locationAddress;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "property_type", length = 50)
     private PropertyType propertyType;
 
     private Integer buildingAge;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "construction_type", length = 50)
     private ConstructionType constructionType;
 
     private BigDecimal propertyValue;
