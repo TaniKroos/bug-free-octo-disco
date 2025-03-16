@@ -8,88 +8,77 @@ import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
 import com.example.brokerportal.quoteservice.mapper.PremiumMapper;
 
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class InsuranceMapperUtil {
 
-    public static <T> void mapPremiumAndCoverages(
-            T insuranceEntity,
+    public static void mapPremiumAndCoveragesToQuoteInsurance(
             PremiumDTO premiumDTO,
             List<CoverageDTO> coverageDTOs,
-            QuoteInsurance quoteInsurance,
-            BiConsumer<Premium, T> premiumSetter,
-            BiConsumer<QuoteInsurance, T> quoteInsuranceSetter
+            QuoteInsurance quoteInsurance
     ) {
-        if (premiumDTO != null) {
-            Premium premium = PremiumMapper.toEntity(premiumDTO);
-            premiumSetter.accept(premium, insuranceEntity);
-            if (insuranceEntity instanceof InsurancePremiumHolder) {
-                ((InsurancePremiumHolder) insuranceEntity).setPremium(premium);
-            }
-        }
 
-        quoteInsuranceSetter.accept(quoteInsurance, insuranceEntity);
+        Premium premium = (premiumDTO != null)
+                ? PremiumMapper.toEntity(premiumDTO)
+                : new Premium(); // ← Blank Premium
+
+        premium.setQuoteInsurance(quoteInsurance);
+        quoteInsurance.setPremium(premium);
+
 
         if (coverageDTOs != null) {
             List<Coverage> coverages = coverageDTOs.stream()
                     .map(dto -> CoverageMapper.toEntity(dto, quoteInsurance))
-                    .toList();
+                    .collect(Collectors.toList());
             quoteInsurance.getCoverages().addAll(coverages);
         }
     }
-    public static <T> void updatePremiumAndCoverages(
-            T insuranceEntity,
+
+    public static void updatePremiumAndCoveragesOnQuoteInsurance(
             PremiumDTO premiumDTO,
             List<CoverageDTO> coverageDTOs,
-            QuoteInsurance quoteInsurance,
-            BiConsumer<Premium, T> premiumSetter
+            QuoteInsurance quoteInsurance
     ) {
-        // ✅ Update Premium
-        if (premiumDTO != null) {
-            Premium existingPremium = null;
-            if (insuranceEntity instanceof InsurancePremiumHolder) {
-                existingPremium = ((InsurancePremiumHolder) insuranceEntity).getPremium();
-            }
 
-            if (existingPremium != null) {
-                existingPremium.setBasePremium(premiumDTO.getBasePremium());
-                existingPremium.setTaxes(premiumDTO.getTaxes());
-                existingPremium.setTotalPremium(premiumDTO.getTotalPremium());
-            } else {
-                Premium newPremium = PremiumMapper.toEntity(premiumDTO);
-                premiumSetter.accept(newPremium, insuranceEntity);
-                if (insuranceEntity instanceof InsurancePremiumHolder) {
-                    ((InsurancePremiumHolder) insuranceEntity).setPremium(newPremium);
-                }
-            }
+        Premium existingPremium = quoteInsurance.getPremium();
+        if (existingPremium == null) {
+            existingPremium = new Premium();
+            existingPremium.setQuoteInsurance(quoteInsurance);
+            quoteInsurance.setPremium(existingPremium);
         }
 
-        // ✅ Update Coverages
+
+        if (premiumDTO != null) {
+            existingPremium.setBasePremium(premiumDTO.getBasePremium());
+            existingPremium.setTaxes(premiumDTO.getTaxes());
+            existingPremium.setTotalPremium(premiumDTO.getTotalPremium());
+        }
+
         if (coverageDTOs != null) {
             List<Coverage> existingCoverages = quoteInsurance.getCoverages();
             List<Long> incomingIds = coverageDTOs.stream()
                     .map(CoverageDTO::getId)
                     .collect(Collectors.toList());
 
-            for (CoverageDTO covDto : coverageDTOs) {
-                if (covDto.getId() != null) {
+            for (CoverageDTO dto : coverageDTOs) {
+                if (dto.getId() != null) {
                     existingCoverages.stream()
-                            .filter(c -> c.getId().equals(covDto.getId()))
+                            .filter(c -> c.getId().equals(dto.getId()))
                             .findFirst()
                             .ifPresent(c -> {
-                                c.setCoverageType(covDto.getCoverageType());
-                                c.setCoverageAmount(covDto.getCoverageAmount());
-                                c.setDescription(covDto.getDescription());
+                                c.setCoverageType(dto.getCoverageType());
+                                c.setCoverageAmount(dto.getCoverageAmount());
+                                c.setDescription(dto.getDescription());
                             });
                 } else {
-                    Coverage newCov = CoverageMapper.toEntity(covDto, quoteInsurance);
-                    existingCoverages.add(newCov);
+                    Coverage newCoverage = CoverageMapper.toEntity(dto, quoteInsurance);
+                    existingCoverages.add(newCoverage);
                 }
             }
 
-            existingCoverages.removeIf(cov -> cov.getId() != null && !incomingIds.contains(cov.getId()));
+
+            existingCoverages.removeIf(c -> c.getId() != null && !incomingIds.contains(c.getId()));
         }
     }
 }

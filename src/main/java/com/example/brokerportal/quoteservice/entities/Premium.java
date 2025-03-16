@@ -21,27 +21,7 @@ public class Premium {
     private Double taxes;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quote_id")
-    private Quote quote;
-
-    // Premium mapped to PropertyInsurance (optional)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "property_insurance_id")
-    private PropertyInsurance propertyInsurance;
-
-    // Premium mapped to CyberInsurance (optional)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cyber_insurance_id")
-    private CyberInsurance cyberInsurance;
-
-    // Premium mapped to general_liability_insurance (optional)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "general_liability_insurance")
-    private GeneralLiabilityInsurance generalInsurance;
-
-    // Optional: Link back to QuoteInsurance (if needed globally)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quote_insurance_id")
+    @JoinColumn(name = "quote_insurance_id", nullable = false)
     private QuoteInsurance quoteInsurance;
-
+    private boolean deleted = false;
 }

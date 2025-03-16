@@ -11,7 +11,7 @@ import java.util.List;
 @Builder
 public class GeneralLiabilityInsuranceDTO {
 
-    private Long id; // Optional during creation; required during update
+    private Long id;
 
     private BigDecimal coverageLimit;
 
@@ -27,17 +27,16 @@ public class GeneralLiabilityInsuranceDTO {
 
     private Integer businessAreaSqft;
 
-    private String clientInteractionLevel; // LOW, MEDIUM, HIGH
+    private String clientInteractionLevel;
 
     private String riskClassification;
 
     private Boolean additionalInsuredRequired;
 
-    // ✅ Even though coverages are linked to QuoteInsurance, include here for frontend display
+    // for frontend to show
     private List<CoverageDTO> coverages;
 
     private PremiumDTO premium;
 
-    // Optionally expose quoteInsuranceId if needed in response
-    // private Long quoteInsuranceId;
+
 }

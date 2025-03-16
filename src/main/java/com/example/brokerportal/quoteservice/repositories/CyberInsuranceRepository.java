@@ -8,6 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface CyberInsuranceRepository extends JpaRepository<CyberInsurance, Long> {
-    Optional<CyberInsurance> findByQuoteInsuranceId(Long quoteInsuranceId);
     Optional<CyberInsurance> findByQuoteInsuranceIdAndDeletedTrue(Long id);
+    Optional<CyberInsurance> findByQuoteInsuranceIdAndDeletedFalse(Long id);
 }

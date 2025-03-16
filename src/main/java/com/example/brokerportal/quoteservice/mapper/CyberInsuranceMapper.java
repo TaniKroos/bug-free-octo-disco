@@ -35,7 +35,6 @@ public class CyberInsuranceMapper {
                         .map(CoverageMapper::toDTO)
                         .collect(Collectors.toList())
                         : null)
-                .premium(PremiumMapper.toDTO(entity.getPremium()))
                 .build();
     }
 
@@ -60,14 +59,14 @@ public class CyberInsuranceMapper {
                 .deleted(false)
                 .build();
 
-        cyberInsurance.setQuoteInsurance(quoteInsurance); // ✅ establish link
+        cyberInsurance.setQuoteInsurance(quoteInsurance); //  establish link
 
         // Premium Mapping
-        if (dto.getPremium() != null) {
-            Premium premium = PremiumMapper.toEntity(dto.getPremium());
-            premium.setCyberInsurance(cyberInsurance);
-            cyberInsurance.setPremium(premium);
-        }
+//        if (dto.getPremium() != null) {
+//            Premium premium = PremiumMapper.toEntity(dto.getPremium());
+//            premium.setCyberInsurance(cyberInsurance);
+//            cyberInsurance.setPremium(premium);
+//        }
 
         //  Coverages will be created and added directly to quoteInsurance externally
         return cyberInsurance;
@@ -96,17 +95,17 @@ public class CyberInsuranceMapper {
         entity.setCloudServicesUsed(dto.getCloudServicesUsed());
         entity.setIndustryType(dto.getIndustryType());
 
-        // ✅ Update Coverages in QuoteInsurance
+        //  Update Coverages in QuoteInsurance
         CoverageMapper.updateCoveragesInQuoteInsurance(dto.getCoverages(), quoteInsurance);
 
 
-        // ✅ Premium update
-        if (dto.getPremium() != null) {
-            Premium updatedOrNew = PremiumMapper.updateOrCreatePremium(dto.getPremium(), entity.getPremium());
-            if (entity.getPremium() == null) {
-                updatedOrNew.setCyberInsurance(entity); // link only here!
-                entity.setPremium(updatedOrNew);
-            }
-        }
+        //  Premium update
+//        if (dto.getPremium() != null) {
+//            Premium updatedOrNew = PremiumMapper.updateOrCreatePremium(dto.getPremium(), entity.getPremium());
+//            if (entity.getPremium() == null) {
+//                updatedOrNew.setCyberInsurance(entity); // link only here!
+//                entity.setPremium(updatedOrNew);
+//            }
+//        }
     }
 }

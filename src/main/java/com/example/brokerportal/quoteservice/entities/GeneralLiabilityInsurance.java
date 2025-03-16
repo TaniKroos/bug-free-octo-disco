@@ -54,8 +54,7 @@ public class GeneralLiabilityInsurance {
     @Column(name = "additional_insured_required")
     private Boolean additionalInsuredRequired;
 
-    @OneToOne(mappedBy = "generalInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Premium premium;
+
 
     private Boolean deleted = false; // Soft delete
 }

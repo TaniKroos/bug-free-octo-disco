@@ -55,17 +55,15 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
             throw new IllegalStateException("Cyber Insurance already exists. Use update endpoint.");
         }
 
-        // Convert DTO to Entity (excluding coverage mapping here)
+
         CyberInsurance cyberEntity = CyberInsuranceMapper.toEntity(dto,quoteInsurance);
 
-        InsuranceMapperUtil.mapPremiumAndCoverages(
-                cyberEntity,
+        InsuranceMapperUtil.mapPremiumAndCoveragesToQuoteInsurance(
                 dto.getPremium(),
                 dto.getCoverages(),
-                quoteInsurance,
-                (premium, entity) -> premium.setCyberInsurance((CyberInsurance) entity),
-                QuoteInsurance::setCyberInsurance
+                quoteInsurance
         );
+        quoteInsurance.setCyberInsurance(cyberEntity);
 
         cyberInsuranceRepository.save(cyberEntity);
         quoteInsuranceRepository.save(quoteInsurance);
@@ -97,16 +95,15 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
             throw new ResourceNotFoundException("Cyber Insurance not found for this quote.");
         }
 
-        // Update CyberInsurance fields
+
         CyberInsuranceMapper.updateEntityFromDTO(cyberEntity, dto,quoteInsurance);
 
-        InsuranceMapperUtil.updatePremiumAndCoverages(
-                cyberEntity,
+        InsuranceMapperUtil.updatePremiumAndCoveragesOnQuoteInsurance(
                 dto.getPremium(),
                 dto.getCoverages(),
-                quoteInsurance,
-                (premium, entity) -> premium.setCyberInsurance((CyberInsurance) entity)
+                quoteInsurance
         );
+
 
         cyberInsuranceRepository.save(cyberEntity);
         quoteInsuranceRepository.save(quoteInsurance);

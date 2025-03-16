@@ -31,5 +31,8 @@ public class QuoteInsurance {
     private CyberInsurance cyberInsurance;
 
     @OneToOne(mappedBy = "quoteInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Premium premium;
+
+    @OneToOne(mappedBy = "quoteInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
     private GeneralLiabilityInsurance generalInsurance;
 }

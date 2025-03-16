@@ -57,14 +57,13 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
 
         GeneralLiabilityInsurance generalEntity = GeneralLiabilityInsuranceMapper.toEntity(dto, quoteInsurance);
 
-        InsuranceMapperUtil.mapPremiumAndCoverages(
-                generalEntity,
+        InsuranceMapperUtil.mapPremiumAndCoveragesToQuoteInsurance(
                 dto.getPremium(),
                 dto.getCoverages(),
-                quoteInsurance,
-                (premium, entity) -> premium.setGeneralInsurance((GeneralLiabilityInsurance) entity),
-                QuoteInsurance::setGeneralInsurance
+                quoteInsurance
         );
+        quoteInsurance.setGeneralInsurance(generalEntity);
+
 
         generalLiabilityInsuranceRepository.save(generalEntity);
         quoteInsuranceRepository.save(quoteInsurance);
@@ -98,13 +97,12 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
 
         GeneralLiabilityInsuranceMapper.updateEntityFromDTO(generalEntity, dto, quoteInsurance);
 
-        InsuranceMapperUtil.updatePremiumAndCoverages(
-                generalEntity,
+        InsuranceMapperUtil.updatePremiumAndCoveragesOnQuoteInsurance(
                 dto.getPremium(),
                 dto.getCoverages(),
-                quoteInsurance,
-                (premium, entity) -> premium.setGeneralInsurance((GeneralLiabilityInsurance) entity)
+                quoteInsurance
         );
+
 
 
         generalLiabilityInsuranceRepository.save(generalEntity);

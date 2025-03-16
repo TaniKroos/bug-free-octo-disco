@@ -90,7 +90,7 @@ public class JwtUtil {
         try {
             return extractAllClaims(token).getSubject();
         } catch (ExpiredJwtException ex) {
-            return ex.getClaims().getSubject(); // ✅ Allow extracting email from expired token
+            return ex.getClaims().getSubject(); //  Allow extracting email from expired token
         } catch (Exception e) {
             throw new RuntimeException("Invalid token: " + e.getMessage());
         }
@@ -113,7 +113,7 @@ public class JwtUtil {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            return e.getClaims(); // ✅ Allows extracting claims from expired token
+            return e.getClaims(); //  Allows extracting claims from expired token
         }
     }
     public boolean validateRefreshToken(String token, String email) {

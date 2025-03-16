@@ -51,8 +51,7 @@ public class CyberInsurance {
     private String industryType;
 
 
-    @OneToOne(mappedBy = "cyberInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Premium premium;
+
 
     @OneToOne
     @JoinColumn(name = "quote_insurance_id", nullable = false)

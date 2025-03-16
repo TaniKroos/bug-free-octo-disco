@@ -10,13 +10,8 @@ public class PremiumDTO {
     private Double basePremium;
     private Double totalPremium;
     private Double taxes;
-
-    private Long quoteId;
     private Long quoteInsuranceId;
 
-    private Long propertyInsuranceId;
-    private Long cyberInsuranceId;
-    private Long generalInsuranceId;
 }
 
 

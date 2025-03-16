@@ -6,10 +6,7 @@ import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.ClientDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
-import com.example.brokerportal.quoteservice.entities.Client;
-import com.example.brokerportal.quoteservice.entities.GeneralLiabilityInsurance;
-import com.example.brokerportal.quoteservice.entities.Quote;
-import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
+import com.example.brokerportal.quoteservice.entities.*;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
@@ -50,7 +47,7 @@ public class QuoteServiceImpl implements QuoteService{
         Quote quote = QuoteMapper.toEntity(quoteDTO);
         quote.setCreatedAt(LocalDateTime.now());
         quote.setUpdatedAt(LocalDateTime.now());
-        quote.setBroker(userService.getCurrentUser()); // ✅ correct place
+        quote.setBroker(userService.getCurrentUser()); //  correct place
 
         if (quoteDTO.getClient() != null) {
             Client client = ClientMapper.toEntity(quoteDTO.getClient());
@@ -128,12 +125,12 @@ public class QuoteServiceImpl implements QuoteService{
         quote.setDeleted(true);
         quote.setUpdatedAt(LocalDateTime.now());
 
-        // 2. Soft delete all quote_insurance entities linked to this quote
+
         if (quote.getInsurances() != null && !quote.getInsurances().isEmpty()) {
             for (QuoteInsurance quoteInsurance : quote.getInsurances()) {
                 quoteInsurance.setSelected(false); // soft delete quote_insurance
 
-                // 3. Soft delete CYBER insurance if exists
+
                 if ("CYBER".equalsIgnoreCase(quoteInsurance.getInsuranceType())
                         && quoteInsurance.getCyberInsurance() != null) {
                     quoteInsurance.getCyberInsurance().setDeleted(true);
@@ -149,11 +146,13 @@ public class QuoteServiceImpl implements QuoteService{
                     quoteInsurance.getGeneralInsurance().setDeleted(true);
                     generalInsuranceRepository.save(quoteInsurance.getGeneralInsurance());
                 }
-                // 🔸 Add similar logic here for PROPERTY, EMPLOYEE, etc., when those are implemented
+
+                quoteInsurance.getPremium().setDeleted(true);
+
             }
         }
 
-        // 4. Save the quote (cascades QuoteInsurance soft delete if mapped with CascadeType.ALL)
+
         quoteRepository.save(quote);
 
     }
@@ -174,7 +173,7 @@ public class QuoteServiceImpl implements QuoteService{
         }
     }
 
-    // to handle soft deletion of insurances
+
     private void updateInsurancesSelection(Quote quote, List<QuoteInsuranceDTO> updatedInsurances) {
         Map<String, Boolean> selectionMap = updatedInsurances.stream()
                 .collect(Collectors.toMap(QuoteInsuranceDTO::getInsuranceType, QuoteInsuranceDTO::isSelected));
@@ -188,11 +187,11 @@ public class QuoteServiceImpl implements QuoteService{
 
                 if ("CYBER".equalsIgnoreCase(insuranceType) && qi.getCyberInsurance() != null) {
                     if (selected && Boolean.TRUE.equals(qi.getCyberInsurance().getDeleted())) {
-                        // Restore CyberInsurance
+
                         qi.getCyberInsurance().setDeleted(false);
                         cyberInsuranceRepository.save(qi.getCyberInsurance());
                     } else if (!selected && Boolean.FALSE.equals(qi.getCyberInsurance().getDeleted())) {
-                        // Soft delete CyberInsurance
+
                         qi.getCyberInsurance().setDeleted(true);
                         cyberInsuranceRepository.save(qi.getCyberInsurance());
                     }
@@ -219,7 +218,7 @@ public class QuoteServiceImpl implements QuoteService{
         }
         }
 
-        // Add new insurance types if they don’t exist
+
         updatedInsurances.forEach(dto -> {
             boolean alreadyPresent = quote.getInsurances().stream()
                     .anyMatch(q -> q.getInsuranceType().equalsIgnoreCase(dto.getInsuranceType()));
@@ -250,7 +249,7 @@ public class QuoteServiceImpl implements QuoteService{
             client.setAddress(updatedClientDto.getAddress());
         }
 
-        clientRepository.save(client); // ✅ Save updated client
+        clientRepository.save(client);
     }
 
 }

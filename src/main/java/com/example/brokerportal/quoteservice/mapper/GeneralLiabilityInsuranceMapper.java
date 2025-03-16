@@ -31,7 +31,6 @@ public class GeneralLiabilityInsuranceMapper {
                 .coverages(quoteInsuranceCoverages != null
                         ? quoteInsuranceCoverages.stream().map(CoverageMapper::toDTO).collect(Collectors.toList())
                         : null)
-                .premium(PremiumMapper.toDTO(entity.getPremium()))
                 .build();
     }
 
@@ -56,11 +55,11 @@ public class GeneralLiabilityInsuranceMapper {
         generalInsurance.setQuoteInsurance(quoteInsurance); // Link to QuoteInsurance
 
         // Premium mapping
-        if (dto.getPremium() != null) {
-            Premium premium = PremiumMapper.toEntity(dto.getPremium());
-            premium.setGeneralInsurance(generalInsurance);
-            generalInsurance.setPremium(premium);
-        }
+//        if (dto.getPremium() != null) {
+//            Premium premium = PremiumMapper.toEntity(dto.getPremium());
+//            premium.setGeneralInsurance(generalInsurance);
+//            generalInsurance.setPremium(premium);
+//        }
 
         // Coverages will be created externally in QuoteInsurance
         return generalInsurance;
@@ -80,16 +79,16 @@ public class GeneralLiabilityInsuranceMapper {
         entity.setRiskClassification(dto.getRiskClassification());
         entity.setAdditionalInsuredRequired(dto.getAdditionalInsuredRequired());
 
-        // ✅ Update coverages linked to QuoteInsurance
+        //  Update coverages linked to QuoteInsurance
         CoverageMapper.updateCoveragesInQuoteInsurance(dto.getCoverages(), quoteInsurance);
 
-        // ✅ Update or create premium
-        if (dto.getPremium() != null) {
-            Premium updatedOrNew = PremiumMapper.updateOrCreatePremium(dto.getPremium(), entity.getPremium());
-            if (entity.getPremium() == null) {
-                updatedOrNew.setGeneralInsurance(entity); // Link if premium was null
-                entity.setPremium(updatedOrNew);
-            }
-        }
+        //  Update or create premium
+//        if (dto.getPremium() != null) {
+//            Premium updatedOrNew = PremiumMapper.updateOrCreatePremium(dto.getPremium(), entity.getPremium());
+//            if (entity.getPremium() == null) {
+//                updatedOrNew.setGeneralInsurance(entity); // Link if premium was null
+//                entity.setPremium(updatedOrNew);
+//            }
+//        }
     }
 }

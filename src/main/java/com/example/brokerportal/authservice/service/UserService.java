@@ -38,7 +38,7 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    // ✅ NEW METHOD TO FETCH CURRENT USER FROM JWT CONTEXT
+    // NEW METHOD TO FETCH CURRENT USER FROM JWT CONTEXT
     public User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)

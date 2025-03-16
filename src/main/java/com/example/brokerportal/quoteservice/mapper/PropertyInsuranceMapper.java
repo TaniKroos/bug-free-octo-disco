@@ -39,7 +39,6 @@ public class PropertyInsuranceMapper {
                         .map(CoverageMapper::toDTO)
                         .collect(Collectors.toList())
                         : null)
-                .premium(PremiumMapper.toDTO(entity.getPremium()))
                 .build();
     }
 
@@ -70,11 +69,11 @@ public class PropertyInsuranceMapper {
         propertyInsurance.setQuoteInsurance(quoteInsurance); // Link it properly
 
         // Premium
-        if (dto.getPremium() != null) {
-            Premium premium = PremiumMapper.toEntity(dto.getPremium());
-            premium.setPropertyInsurance(propertyInsurance);
-            propertyInsurance.setPremium(premium);
-        }
+//        if (dto.getPremium() != null) {
+//            Premium premium = PremiumMapper.toEntity(dto.getPremium());
+//            premium.setPropertyInsurance(propertyInsurance);
+//            propertyInsurance.setPremium(premium);
+//        }
 
         // Coverages handled externally through CoverageMapper
         return propertyInsurance;
@@ -100,16 +99,16 @@ public class PropertyInsuranceMapper {
         entity.setBusinessInterruptionLimit(dto.getBusinessInterruptionLimit());
         entity.setNotes(dto.getNotes());
 
-        // ✅ Update Coverages in QuoteInsurance
+        //  Update Coverages in QuoteInsurance
         CoverageMapper.updateCoveragesInQuoteInsurance(dto.getCoverages(), quoteInsurance);
 
-        // ✅ Update or Create Premium
-        if (dto.getPremium() != null) {
-            Premium updatedOrNew = PremiumMapper.updateOrCreatePremium(dto.getPremium(), entity.getPremium());
-            if (entity.getPremium() == null) {
-                updatedOrNew.setPropertyInsurance(entity); // Only set if new
-                entity.setPremium(updatedOrNew);
-            }
-        }
+        //  Update or Create Premium
+//        if (dto.getPremium() != null) {
+//            Premium updatedOrNew = PremiumMapper.updateOrCreatePremium(dto.getPremium(), entity.getPremium());
+//            if (entity.getPremium() == null) {
+//                updatedOrNew.setPropertyInsurance(entity); // Only set if new
+//                entity.setPremium(updatedOrNew);
+//            }
+//        }
     }
 }

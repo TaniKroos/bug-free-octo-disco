@@ -12,9 +12,10 @@ public class QuoteInsuranceMapper {
                 .id(entity.getId())
                 .insuranceType(entity.getInsuranceType())
                 .isSelected(entity.isSelected())
-                .propertyInsurance(PropertyInsuranceMapper.toDTO(entity.getPropertyInsurance(),entity.getCoverages()))
+                .propertyInsurance(PropertyInsuranceMapper.toDTO(entity.getPropertyInsurance(), entity.getCoverages()))
                 .cyberInsurance(CyberInsuranceMapper.toDTO(entity.getCyberInsurance(), entity.getCoverages()))
-                .generalInsurance(GeneralLiabilityInsuranceMapper.toDTO(entity.getGeneralInsurance(),entity.getCoverages()))
+                .generalInsurance(GeneralLiabilityInsuranceMapper.toDTO(entity.getGeneralInsurance(), entity.getCoverages()))
+                .premium(PremiumMapper.toDTO(entity.getPremium())) // ✅ Include premium
                 .build();
     }
 

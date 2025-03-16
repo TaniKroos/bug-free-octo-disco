@@ -27,7 +27,7 @@ public class CoverageMapper {
         coverage.setCoverageType(dto.getCoverageType());
         coverage.setCoverageAmount(dto.getCoverageAmount());
         coverage.setDescription(dto.getDescription());
-        coverage.setQuoteInsurance(quoteInsurance); // ✅ Only this link now
+        coverage.setQuoteInsurance(quoteInsurance); //  Only this link now
         return coverage;
     }
 //    public static List<Coverage> updateCoverageList(List<Coverage> existingCoverages, List<CoverageDTO> incomingDtos, QuoteInsurance parentQuoteInsurance) {
@@ -78,7 +78,7 @@ public class CoverageMapper {
             }
         }
 
-        // Remove stale coverages
+        // Remove old and not selected coverages
         Iterator<Coverage> iterator = quoteInsurance.getCoverages().iterator();
         while (iterator.hasNext()) {
             Coverage coverage = iterator.next();

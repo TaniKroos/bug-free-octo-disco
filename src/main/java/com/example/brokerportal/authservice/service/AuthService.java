@@ -59,7 +59,7 @@ public class AuthService {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "User registered successfully");
         response.put("accessToken", accessToken);
-        // response.put("refreshToken", refreshToken); // Add if needed
+        // response.put("refreshToken", refreshToken);
 
         return ResponseEntity.ok(response);
     }

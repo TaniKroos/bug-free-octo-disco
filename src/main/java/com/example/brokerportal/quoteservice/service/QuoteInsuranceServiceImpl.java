@@ -41,8 +41,6 @@ public class QuoteInsuranceServiceImpl implements QuoteInsuranceService {
             QuoteInsurance insuranceEntity = QuoteInsuranceMapper.toEntity(dto);
             insuranceEntity.setQuote(quote);
 
-            // 🛑 Do NOT populate insuranceEntity.setCyberInsurance() or others here
-            // Let them stay null — they’ll be added later via respective service
 
             insuranceEntities.add(insuranceEntity);
         }
@@ -61,62 +59,62 @@ public class QuoteInsuranceServiceImpl implements QuoteInsuranceService {
                 .toList();
     }
 
-    // 🔥 CyberInsurance Logic Fix: Now works with proper QuoteInsurance ID
-    private void handleCyberInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
-        if (!"CYBER".equalsIgnoreCase(dto.getInsuranceType())) return;
 
-        if (!dto.isSelected()) {
-            if (insuranceEntity.getCyberInsurance() != null) {
-                insuranceEntity.getCyberInsurance().setDeleted(true);
-                cyberInsuranceRepository.save(insuranceEntity.getCyberInsurance());
-            }
-            insuranceEntity.setCyberInsurance(null);
-        } else {
-            // Try restoring existing soft-deleted CyberInsurance linked to this QuoteInsurance
-            CyberInsurance existing = cyberInsuranceRepository
-                    .findByQuoteInsuranceIdAndDeletedTrue(insuranceEntity.getId())
-                    .orElse(null);
-
-            if (existing != null) {
-                existing.setDeleted(false);
-                existing.setQuoteInsurance(insuranceEntity);
-                cyberInsuranceRepository.save(existing);
-                insuranceEntity.setCyberInsurance(existing);
-            } else {
-                // 🔥 FIX: Updated to match new CyberInsuranceMapper.toEntity(dto, quoteInsurance)
-                CyberInsurance newCyber = CyberInsuranceMapper.toEntity(dto.getCyberInsurance(), insuranceEntity);
-                insuranceEntity.setCyberInsurance(newCyber);
-            }
-        }
-    }
-
-    private void handlePropertyInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
-        if (!"PROPERTY".equalsIgnoreCase(dto.getInsuranceType())) return;
-
-        if (!dto.isSelected()) {
-            if (insuranceEntity.getPropertyInsurance() != null) {
-                insuranceEntity.getPropertyInsurance().setDeleted(true);
-                propertyInsuranceRepository.save(insuranceEntity.getPropertyInsurance());
-            }
-            insuranceEntity.setPropertyInsurance(null);
-        } else {
-            // Try restoring existing soft-deleted CyberInsurance linked to this QuoteInsurance
-            PropertyInsurance existing = propertyInsuranceRepository
-                    .findByQuoteInsuranceIdAndDeletedTrue(insuranceEntity.getId())
-                    .orElse(null);
-
-            if (existing != null) {
-                existing.setDeleted(false);
-                existing.setQuoteInsurance(insuranceEntity);
-                propertyInsuranceRepository.save(existing);
-                insuranceEntity.setPropertyInsurance(existing);
-            } else {
-                // 🔥 FIX: Updated to match new CyberInsuranceMapper.toEntity(dto, quoteInsurance)
-                PropertyInsurance newPropertyInsurance = PropertyInsuranceMapper.toEntity(dto.getPropertyInsurance(), insuranceEntity);
-                insuranceEntity.setPropertyInsurance(newPropertyInsurance);
-            }
-        }
-    }
+//    private void handleCyberInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
+//        if (!"CYBER".equalsIgnoreCase(dto.getInsuranceType())) return;
+//
+//        if (!dto.isSelected()) {
+//            if (insuranceEntity.getCyberInsurance() != null) {
+//                insuranceEntity.getCyberInsurance().setDeleted(true);
+//                cyberInsuranceRepository.save(insuranceEntity.getCyberInsurance());
+//            }
+//            insuranceEntity.setCyberInsurance(null);
+//        } else {
+//            // Try restoring existing soft-deleted CyberInsurance linked to this QuoteInsurance
+//            CyberInsurance existing = cyberInsuranceRepository
+//                    .findByQuoteInsuranceIdAndDeletedTrue(insuranceEntity.getId())
+//                    .orElse(null);
+//
+//            if (existing != null) {
+//                existing.setDeleted(false);
+//                existing.setQuoteInsurance(insuranceEntity);
+//                cyberInsuranceRepository.save(existing);
+//                insuranceEntity.setCyberInsurance(existing);
+//            } else {
+//                // 🔥 FIX: Updated to match new CyberInsuranceMapper.toEntity(dto, quoteInsurance)
+//                CyberInsurance newCyber = CyberInsuranceMapper.toEntity(dto.getCyberInsurance(), insuranceEntity);
+//                insuranceEntity.setCyberInsurance(newCyber);
+//            }
+//        }
+//    }
+//
+//    private void handlePropertyInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
+//        if (!"PROPERTY".equalsIgnoreCase(dto.getInsuranceType())) return;
+//
+//        if (!dto.isSelected()) {
+//            if (insuranceEntity.getPropertyInsurance() != null) {
+//                insuranceEntity.getPropertyInsurance().setDeleted(true);
+//                propertyInsuranceRepository.save(insuranceEntity.getPropertyInsurance());
+//            }
+//            insuranceEntity.setPropertyInsurance(null);
+//        } else {
+//            // Try restoring existing soft-deleted CyberInsurance linked to this QuoteInsurance
+//            PropertyInsurance existing = propertyInsuranceRepository
+//                    .findByQuoteInsuranceIdAndDeletedTrue(insuranceEntity.getId())
+//                    .orElse(null);
+//
+//            if (existing != null) {
+//                existing.setDeleted(false);
+//                existing.setQuoteInsurance(insuranceEntity);
+//                propertyInsuranceRepository.save(existing);
+//                insuranceEntity.setPropertyInsurance(existing);
+//            } else {
+//                // 🔥 FIX: Updated to match new CyberInsuranceMapper.toEntity(dto, quoteInsurance)
+//                PropertyInsurance newPropertyInsurance = PropertyInsuranceMapper.toEntity(dto.getPropertyInsurance(), insuranceEntity);
+//                insuranceEntity.setPropertyInsurance(newPropertyInsurance);
+//            }
+//        }
+//    }
 
 //    private void handleEmployeeInsuranceLogic(QuoteInsuranceDTO dto, QuoteInsurance insuranceEntity) {
 //        if (dto.getEmployeeInsurance() != null) {

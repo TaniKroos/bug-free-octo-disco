@@ -30,7 +30,7 @@ public class QuoteMapper {
                                         dto.setCyberInsurance(null);
                                     }
 
-                                    // 🔸 Add similar logic for PROPERTY / EMPLOYEE if you soft-delete those later
+                                    //    logic for PROPERTY / EMPLOYEE if you soft-delete those later
 
                                     return dto;
                                 })

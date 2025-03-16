@@ -11,7 +11,5 @@ import java.util.Optional;
 public interface TokenRepository extends JpaRepository<Token, Long> {
     @Query("SELECT t FROM Token t WHERE t.user.email = :email")
     Optional<Token> findByUserEmail(@Param("email") String email);
-//    Optional<Token> findByUser(User user);
-//    void deleteByRefreshToken(String refreshToken);
-//    Optional<Token> findByRefreshToken(String refreshToken);
+
 }

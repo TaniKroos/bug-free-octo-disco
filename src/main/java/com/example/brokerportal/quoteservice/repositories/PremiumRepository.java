@@ -8,8 +8,5 @@ import java.util.List;
 
 @Repository
 public interface PremiumRepository extends JpaRepository<Premium, Long> {
-    List<Premium> findByPropertyInsuranceId(Long propertyInsuranceId);
-    List<Premium> findByCyberInsuranceId(Long cyberInsuranceId);
-    List<Premium> findByGeneralInsuranceId(Long employeeInsuranceId);
-    List<Premium> findByQuoteId(Long quoteId);
+    List<Premium> findByQuoteInsurance_Quote_Id(Long quoteId);
 }

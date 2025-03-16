@@ -29,7 +29,7 @@ public class CyberInsuranceDTO {
     private String cloudServicesUsed;
     private String industryType;
 
-    // ✅ Even though coverages are linked to QuoteInsurance, you show them here for frontend display
+    // for frontend to show
     private List<CoverageDTO> coverages;
 
     private PremiumDTO premium;

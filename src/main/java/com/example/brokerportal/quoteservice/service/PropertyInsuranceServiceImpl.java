@@ -54,15 +54,14 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
         }
         PropertyInsurance propertyEntity = PropertyInsuranceMapper.toEntity(dto,quoteInsurance);
 
-        // Map premium
-        InsuranceMapperUtil.mapPremiumAndCoverages(
-                propertyEntity,
+
+        InsuranceMapperUtil.mapPremiumAndCoveragesToQuoteInsurance(
                 dto.getPremium(),
                 dto.getCoverages(),
-                quoteInsurance,
-                (premium, entity) -> premium.setPropertyInsurance((PropertyInsurance) entity),
-                QuoteInsurance::setPropertyInsurance
+                quoteInsurance
         );
+        quoteInsurance.setPropertyInsurance(propertyEntity);
+
         propertyInsuranceRepository.save(propertyEntity);
         quoteInsuranceRepository.save(quoteInsurance);
         return  PropertyInsuranceMapper.toDTO(propertyEntity,quoteInsurance.getCoverages());
@@ -94,13 +93,12 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
 
         PropertyInsuranceMapper.updateEntityFromDTO(propertyEntity, dto, quoteInsurance);
 
-        InsuranceMapperUtil.updatePremiumAndCoverages(
-                propertyEntity,
+        InsuranceMapperUtil.updatePremiumAndCoveragesOnQuoteInsurance(
                 dto.getPremium(),
                 dto.getCoverages(),
-                quoteInsurance,
-                (premium, entity) -> premium.setPropertyInsurance((PropertyInsurance) propertyEntity)
+                quoteInsurance
         );
+
 
         propertyInsuranceRepository.save(propertyEntity);
         quoteInsuranceRepository.save(quoteInsurance);
@@ -108,7 +106,7 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
         return PropertyInsuranceMapper.toDTO(propertyEntity, quoteInsurance.getCoverages());
     }
 
-    // get property insurance
+
     @Override
     public PropertyInsuranceDTO getPropertyInsuranceByQuoteId(Long quoteId) {
         QuoteInsurance insurance = quoteInsuranceRepository.findByQuoteIdAndInsuranceType(quoteId, "PROPERTY")

@@ -46,10 +46,9 @@ public class PropertyInsuranceDTO {
 
     private String notes;
 
-    // ✅ Even though coverages are linked to QuoteInsurance, you show them here for frontend display
+
     private List<CoverageDTO> coverages;
 
     private PremiumDTO premium;
-    // You can optionally expose quoteInsuranceId if needed in response
-    // private Long quoteInsuranceId;
+
 }

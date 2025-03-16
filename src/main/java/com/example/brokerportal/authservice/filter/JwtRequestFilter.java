@@ -115,13 +115,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
 
     }
+    // used to setauthentication context later used in quoteservice for authorization
     private void setAuthentication(String email, HttpServletRequest request) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        System.out.println("✅ Authenticated user: " + email);
+        System.out.println("Authenticated user: " + email);
         System.out.println("Authorities: " + userDetails.getAuthorities());
         System.out.println("SecurityContext Authentication: " + SecurityContextHolder.getContext().getAuthentication());
 

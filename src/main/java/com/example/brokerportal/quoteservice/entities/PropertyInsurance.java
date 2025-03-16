@@ -57,8 +57,7 @@ public class PropertyInsurance {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @OneToOne(mappedBy = "propertyInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Premium premium;
+
 
     private Boolean deleted = false; // Soft delete
 
