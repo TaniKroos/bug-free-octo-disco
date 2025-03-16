@@ -1,6 +1,7 @@
 package com.example.brokerportal.quoteservice.controller;
 
 
+import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.service.QuoteService;
 import jakarta.annotation.PostConstruct;
@@ -52,8 +53,11 @@ public class QuoteController {
         return ResponseEntity.ok("Quote with ID " + id + " has been soft deleted along with its insurances.");
     }
     @GetMapping("/by-broker")
-    public ResponseEntity<List<QuoteDTO>> getQuoteByBrokerId(){
-        List<QuoteDTO> ls = quoteService.getQuotesByBrokerId();
+    public ResponseEntity<PagedResponseDTO<QuoteDTO>> getQuoteByBrokerId(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        PagedResponseDTO<QuoteDTO> ls = quoteService.getQuotesByBrokerId(page,size);
         return ResponseEntity.ok(ls);
     }
 }

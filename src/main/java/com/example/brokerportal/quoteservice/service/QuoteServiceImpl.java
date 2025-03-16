@@ -4,6 +4,7 @@ import com.example.brokerportal.authservice.entities.User;
 import com.example.brokerportal.authservice.repository.UserRepository;
 import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.ClientDTO;
+import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.*;
@@ -13,6 +14,10 @@ import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
 import com.example.brokerportal.quoteservice.repositories.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -158,12 +163,28 @@ public class QuoteServiceImpl implements QuoteService{
     }
 
     @Override
-    public List<QuoteDTO> getQuotesByBrokerId() {
+    public PagedResponseDTO<QuoteDTO> getQuotesByBrokerId(int page, int size) {
         User broker = userService.getCurrentUser();
         Long brokerId = broker.getId();
-        List<Quote> quotes = quoteRepository.findByBrokerIdAndDeletedFalse(brokerId);
-        return quotes.stream().map(QuoteMapper::toDTO).collect(Collectors.toList());
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Quote> quotePage = quoteRepository.findByBrokerIdAndDeletedFalse(brokerId, pageable);
+
+        List<QuoteDTO> quoteDTOs = quotePage.getContent()
+                .stream()
+                .map(QuoteMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return new PagedResponseDTO<>(
+                quoteDTOs,
+                quotePage.getNumber(),
+                quotePage.getSize(),
+                quotePage.getTotalElements(),
+                quotePage.getTotalPages(),
+                quotePage.isLast()
+        );
     }
+
 
     // To authorize the broker
     private void authorizeBrokerAccess(Quote quote) {
