@@ -1,12 +1,17 @@
 package com.example.brokerportal.authservice.service;
 
+import com.example.brokerportal.authservice.dto.PendingUser;
 import com.example.brokerportal.authservice.entities.Token;
 import com.example.brokerportal.authservice.entities.User;
 import com.example.brokerportal.authservice.repository.TokenRepository;
 import com.example.brokerportal.authservice.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 @Service
 public class AuthService {
@@ -35,7 +41,12 @@ public class AuthService {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private   CacheManager cacheManager;
 
+
+    @Autowired
+    private EmailService emailService;
     public String authenticateUser(String email, String password) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password));
@@ -45,23 +56,15 @@ public class AuthService {
         return jwtUtil.generateAccessToken(email);
     }
 
-    public ResponseEntity<?> register(User user) {
-        if (userService.isEmailExists(user.getEmail())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email already registered");
-        }
+    public void register(User user) {
+        String code = String.valueOf(new Random().nextInt(900000) + 100000);
+        PendingUser pendingUser = PendingUser.builder()
+                .user(user)
+                .verificationCode(code)
+                .build();
+        cacheManager.getCache("userVerificationCache").put(user.getEmail(),pendingUser);
+        emailService.sendVerificationEmail(user.getEmail(), code);
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userService.saveUser(user);  
-
-        String accessToken = jwtUtil.generateAccessToken(user.getEmail());
-        String refreshToken = generateAndStoreRefreshToken(user.getEmail());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "User registered successfully");
-        response.put("accessToken", accessToken);
-        // response.put("refreshToken", refreshToken);
-
-        return ResponseEntity.ok(response);
     }
 
     private String generateAndStoreRefreshToken(String email) {
@@ -84,4 +87,6 @@ public class AuthService {
                 .map(user -> ResponseEntity.ok(user.getId().toString()))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found"));
     }
+
+
 }

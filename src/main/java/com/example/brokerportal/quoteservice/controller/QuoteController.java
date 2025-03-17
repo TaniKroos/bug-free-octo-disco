@@ -4,9 +4,12 @@ package com.example.brokerportal.quoteservice.controller;
 import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.service.QuoteService;
+import com.example.brokerportal.quoteservice.service.RateLimiterService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,14 +19,20 @@ import java.util.List;
 @RequestMapping("/api/quotes")
 public class QuoteController {
     private final QuoteService quoteService;
-
+    private final RateLimiterService rateLimiterService;
     @GetMapping("/test")
     public String test() {
         return "Quote controller is alive!";
     }
     // Create Quote
     @PostMapping
-    public ResponseEntity<QuoteDTO> createQuote(@RequestBody QuoteDTO quoteDTO) {
+    public ResponseEntity<?> createQuote(@RequestBody QuoteDTO quoteDTO) {
+        String userKey = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!rateLimiterService.allowRequest(userKey, 5)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Rate limit exceeded. Try again later.");
+        }
         QuoteDTO createdQuote = quoteService.createQuote(quoteDTO);
         return ResponseEntity.ok(createdQuote);
     }

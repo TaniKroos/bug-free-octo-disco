@@ -37,7 +37,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         System.out.println("🔐 JwtRequestFilter executed for path: " + request.getRequestURI());
 
         String path = request.getRequestURI();
-        if (path.equals("/authenticate") || path.equals("/register") || path.equals("/login")) {
+        if (path.equals("/authenticate") || path.equals("/register") || path.equals("/verify")) {
             chain.doFilter(request, response);
             return;
         }
