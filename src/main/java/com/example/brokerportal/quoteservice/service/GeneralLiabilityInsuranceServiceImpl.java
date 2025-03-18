@@ -5,6 +5,7 @@ import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.dto.GeneralLiabilityInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
 import com.example.brokerportal.quoteservice.mapper.GeneralLiabilityInsuranceMapper;
@@ -50,7 +51,9 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
         }
 
         authorizeBrokerAccess(quoteInsurance);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         if (quoteInsurance.getGeneralInsurance() != null && !Boolean.TRUE.equals(quoteInsurance.getGeneralInsurance().getDeleted())) {
             throw new IllegalStateException("General Liability Insurance already exists. Use update endpoint.");
         }
@@ -89,7 +92,9 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
         }
 
         authorizeBrokerAccess(quoteInsurance);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         GeneralLiabilityInsurance generalEntity = quoteInsurance.getGeneralInsurance();
         if (generalEntity == null) {
             throw new ResourceNotFoundException("General Liability Insurance not found for this quote.");
@@ -113,6 +118,7 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
 
     @Override
     public GeneralLiabilityInsuranceDTO getGeneralLiabilityInsuranceByQuoteId(Long quoteId) {
+
         QuoteInsurance insurance = quoteInsuranceRepository.findByQuoteIdAndInsuranceType(quoteId, "GENERAL")
                 .orElseThrow(() -> new ResourceNotFoundException("General Liability Insurance not found for Quote ID: " + quoteId));
 
@@ -130,12 +136,15 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
     @Transactional
     public void softDeleteGeneralLiabilityInsurance(Long quoteId) {
         log.info("Soft deleting General Liability Insurance for Quote ID: {}", quoteId);
-
+        Quote quote = quoteRepository.findById(quoteId)
+                .orElseThrow(() -> new RuntimeException("Quote with this id does not exist"));
         QuoteInsurance insurance = quoteInsuranceRepository.findByQuoteIdAndInsuranceType(quoteId, "GENERAL")
                 .orElseThrow(() -> new ResourceNotFoundException("General Liability Insurance not found for Quote ID: " + quoteId));
 
         authorizeBrokerAccess(insurance);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         GeneralLiabilityInsurance entity = insurance.getGeneralInsurance();
         if (entity != null) {
             entity.setDeleted(true);

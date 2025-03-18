@@ -8,6 +8,7 @@ import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
@@ -40,6 +41,7 @@ public class QuoteServiceImpl implements QuoteService{
     private final CyberInsuranceRepository cyberInsuranceRepository;
     private final PropertyInsuranceRepository propertyInsuranceRepository;
     private final GeneralLiabilityInsuranceRepository generalInsuranceRepository;
+    private final PremiumRepository premiumRepository;
     @Override
     @Transactional
     public QuoteDTO createQuote(QuoteDTO quoteDTO){
@@ -93,6 +95,9 @@ public class QuoteServiceImpl implements QuoteService{
 
 
         authorizeBrokerAccess(quote);
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         if(quote.isDeleted()){
             throw new ResourceNotFoundException("Quote with this id is deleted");
         }
@@ -126,15 +131,17 @@ public class QuoteServiceImpl implements QuoteService{
         Quote quote = quoteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Quote not found with id: " + id));
         authorizeBrokerAccess(quote);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         quote.setDeleted(true);
         quote.setUpdatedAt(LocalDateTime.now());
 
 
         if (quote.getInsurances() != null && !quote.getInsurances().isEmpty()) {
             for (QuoteInsurance quoteInsurance : quote.getInsurances()) {
+                quoteInsurance.setWasSelectedBefore(quoteInsurance.isSelected());
                 quoteInsurance.setSelected(false); // soft delete quote_insurance
-
 
                 if ("CYBER".equalsIgnoreCase(quoteInsurance.getInsuranceType())
                         && quoteInsurance.getCyberInsurance() != null) {
@@ -273,4 +280,97 @@ public class QuoteServiceImpl implements QuoteService{
         clientRepository.save(client);
     }
 
+    @Override
+    @Transactional
+    public void restoreQuote(Long id){
+        Quote quote = quoteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Quote with this id does not exist"));
+        authorizeBrokerAccess(quote);
+
+        quote.setDeleted(false);
+        quote.setUpdatedAt(LocalDateTime.now());
+        if(quote.getInsurances()!= null && !quote.getInsurances().isEmpty()){
+            for (QuoteInsurance qi : quote.getInsurances()){
+                String insuranceType = qi.getInsuranceType();
+                switch (insuranceType.toUpperCase()) {
+                    case "CYBER":
+                        qi.getCyberInsurance().setDeleted(false);
+                        cyberInsuranceRepository.save(qi.getCyberInsurance());
+                        break;
+                    case "PROPERTY":
+                        qi.getPropertyInsurance().setDeleted(false);
+                        propertyInsuranceRepository.save(qi.getPropertyInsurance());
+                        break;
+                    case "GENERAL":
+                        qi.getGeneralInsurance().setDeleted(false);
+                        generalInsuranceRepository.save(qi.getGeneralInsurance());
+                        break;
+                    default:
+                        break;
+                }
+                // Restore premium
+                if (qi.getPremium() != null) {
+                    qi.getPremium().setDeleted(false);
+                    premiumRepository.save(qi.getPremium());
+                }
+                qi.setSelected(Boolean.TRUE.equals(qi.getWasSelectedBefore()));
+            }
+        }
+        quoteRepository.save(quote);
+    }
+
+    @Override
+    @Transactional
+    public void bindQuote(Long id) {
+        Quote quote = quoteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Quote not found with id: " + id));
+
+        authorizeBrokerAccess(quote);
+
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
+        for(QuoteInsurance qi : quote.getInsurances()){
+            if(qi.isSelected()){
+                if ((qi.getPremium().getTotalPremium() == null || qi.getPremium().isDeleted())){
+                    throw new IllegalStateException("Premium not generated for this qutoe yet");
+                }
+            }
+        }
+
+        quote.setStatus("BOUND");
+        quote.setUpdatedAt(LocalDateTime.now());
+
+        quoteRepository.save(quote);
+
+        // Optional: trigger async confirmation email
+        // asyncEventPublisher.sendBindConfirmation(quote);
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

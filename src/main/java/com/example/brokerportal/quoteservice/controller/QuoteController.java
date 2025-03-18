@@ -69,4 +69,16 @@ public class QuoteController {
         PagedResponseDTO<QuoteDTO> ls = quoteService.getQuotesByBrokerId(page,size);
         return ResponseEntity.ok(ls);
     }
+
+    @GetMapping("/restore/{id}")
+    public ResponseEntity<String> restoreQuote(@PathVariable Long id) {
+        quoteService.restoreQuote(id);
+        return ResponseEntity.ok("Quote with ID " + id + " has been restored along with its insurances.");
+    }
+
+    @PostMapping("/{id}/bind")
+    public ResponseEntity<String> bindQuote(@PathVariable Long id) {
+        quoteService.bindQuote(id);
+        return ResponseEntity.ok("Quote bound successfully!");
+    }
 }

@@ -6,6 +6,7 @@ import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.dto.PropertyInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
 import com.example.brokerportal.quoteservice.mapper.PremiumMapper;
@@ -48,6 +49,9 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
             throw new IllegalStateException("Property Insurancce is not selected in this quote");
         }
         authorizeBrokerAccess(quoteInsurance);
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         if(quoteInsurance.getPropertyInsurance() != null){
             throw new IllegalStateException("Property Insurance with this quote already exist, Try to hit the update endpoint");
 
@@ -85,7 +89,9 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
         }
 
         authorizeBrokerAccess(quoteInsurance);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         PropertyInsurance propertyEntity = quoteInsurance.getPropertyInsurance();
         if (propertyEntity == null) {
             throw new ResourceNotFoundException("Property Insurance not found for this quote.");
@@ -126,12 +132,15 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
     @Transactional
     public void softDeletePropertyInsurance(Long quoteId) {
         log.info("Soft deleting Property Insurance for Quote ID: {}", quoteId);
-
+        Quote quote = quoteRepository.findById(quoteId)
+                .orElseThrow(() -> new RuntimeException("Quote with this id does not exist"));
         QuoteInsurance insurance = quoteInsuranceRepository.findByQuoteIdAndInsuranceType(quoteId, "PROPERTY")
                 .orElseThrow(() -> new ResourceNotFoundException("Property Insurance not found for Quote ID: " + quoteId));
 
         authorizeBrokerAccess(insurance);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         PropertyInsurance propertyInsurance = insurance.getPropertyInsurance();
         if (propertyInsurance != null) {
             propertyInsurance.setDeleted(true);

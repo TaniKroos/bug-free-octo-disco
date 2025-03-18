@@ -5,6 +5,7 @@ import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.CyberInsuranceDTO;
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
 import com.example.brokerportal.quoteservice.mapper.CyberInsuranceMapper;
@@ -39,7 +40,9 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
 
         Quote quote = quoteRepository.findById(quoteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Quote with this ID not found"));
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         QuoteInsurance quoteInsurance = quote.getInsurances().stream()
                 .filter(qi -> "CYBER".equalsIgnoreCase(qi.getInsuranceType()))
                 .findFirst()
@@ -89,7 +92,9 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
         }
 
         authorizeBrokerAccess(quoteInsurance);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         CyberInsurance cyberEntity = quoteInsurance.getCyberInsurance();
         if (cyberEntity == null) {
             throw new ResourceNotFoundException("Cyber Insurance not found for this quote.");
@@ -130,12 +135,15 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
     @Transactional
     public void softDeleteCyberInsurance(Long quoteId) {
         log.info("Soft deleting Cyber Insurance for Quote ID: {}", quoteId);
-
+        Quote quote = quoteRepository.findById(quoteId)
+                .orElseThrow(() ->  new RuntimeException("Quote does not exist with this id"));
         QuoteInsurance insurance = quoteInsuranceRepository.findByQuoteIdAndInsuranceType(quoteId, "CYBER")
                 .orElseThrow(() -> new ResourceNotFoundException("Cyber Insurance not found for Quote ID: " + quoteId));
 
         authorizeBrokerAccess(insurance);
-
+        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+        }
         CyberInsurance cyberInsurance = insurance.getCyberInsurance();
         if (cyberInsurance != null) {
             cyberInsurance.setDeleted(true);

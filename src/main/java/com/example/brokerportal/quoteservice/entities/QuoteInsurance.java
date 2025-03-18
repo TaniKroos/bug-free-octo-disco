@@ -35,4 +35,7 @@ public class QuoteInsurance {
 
     @OneToOne(mappedBy = "quoteInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
     private GeneralLiabilityInsurance generalInsurance;
+
+    @Column(name = "was_selected_before")
+    private Boolean wasSelectedBefore;
 }
