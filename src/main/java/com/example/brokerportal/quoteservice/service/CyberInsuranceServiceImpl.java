@@ -5,6 +5,7 @@ import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.CyberInsuranceDTO;
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.AuditAction;
 import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
@@ -32,7 +33,7 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
     private final QuoteRepository quoteRepository;
     private final QuoteInsuranceRepository quoteInsuranceRepository;
     private final UserService userService;
-
+    private final AuditLogService auditLogService;
     @Override
     @Transactional
     public CyberInsuranceDTO createCyberInsurance(Long quoteId, CyberInsuranceDTO dto) {
@@ -70,7 +71,9 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
 
         cyberInsuranceRepository.save(cyberEntity);
         quoteInsuranceRepository.save(quoteInsurance);
-
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Created Cyber Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.CYBER_INSURANCE_CREATED, quote, details, performedBy);
         return CyberInsuranceMapper.toDTO(cyberEntity,quoteInsurance.getCoverages());
     }
 
@@ -112,7 +115,9 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
 
         cyberInsuranceRepository.save(cyberEntity);
         quoteInsuranceRepository.save(quoteInsurance);
-
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Updated Cyber Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.CYBER_INSURANCE_UPDATED, quote, details, performedBy);
         return CyberInsuranceMapper.toDTO(cyberEntity, quoteInsurance.getCoverages());
     }
 
@@ -153,6 +158,10 @@ public class CyberInsuranceServiceImpl implements CyberInsuranceService {
 
         insurance.setSelected(false);
         quoteInsuranceRepository.save(insurance);
+
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Soft Deleted Cyber Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.CYBER_INSURANCE_SOFT_DELETED, quote, details, performedBy);
     }
 
     private void authorizeBrokerAccess(QuoteInsurance quoteInsurance) {

@@ -8,6 +8,7 @@ import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.AuditAction;
 import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
@@ -42,6 +43,7 @@ public class QuoteServiceImpl implements QuoteService{
     private final PropertyInsuranceRepository propertyInsuranceRepository;
     private final GeneralLiabilityInsuranceRepository generalInsuranceRepository;
     private final PremiumRepository premiumRepository;
+    private final AuditLogService auditLogService;
     @Override
     @Transactional
     public QuoteDTO createQuote(QuoteDTO quoteDTO){
@@ -65,7 +67,12 @@ public class QuoteServiceImpl implements QuoteService{
         if(quoteDTO.getInsurances() != null && !quoteDTO.getInsurances().isEmpty()){
             quoteInsuranceService.mapAndAttachInsurancesToQuote(quote,quoteDTO.getInsurances());
         }
+        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
+        String changedDetails = "Created Quote ID: " + saved.getId() +
+                ", Status: " + saved.getStatus() ;
 
+
+        auditLogService.logAction(AuditAction.QUOTE_CREATED, saved, changedDetails, performedBy);
         return QuoteMapper.toDTO(saved);
     }
 
@@ -116,6 +123,12 @@ public class QuoteServiceImpl implements QuoteService{
         }
 
         Quote updatedQuote = quoteRepository.save(quote);
+        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
+        String changedDetails = "Update Quote ID: " + updatedQuote.getId() +
+                ", Status: " + updatedQuote.getStatus() ;
+
+
+        auditLogService.logAction(AuditAction.QUOTE_UPDATED, updatedQuote, changedDetails, performedBy);
         return QuoteMapper.toDTO(updatedQuote);
     }
 
@@ -165,6 +178,12 @@ public class QuoteServiceImpl implements QuoteService{
         }
 
 
+        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
+        String changedDetails = "Soft Deleted Quote ID: " + quote.getId() +
+                ", Status: " + quote.getStatus() ;
+
+
+        auditLogService.logAction(AuditAction.QUOTE_SOFT_DELETED, quote, changedDetails, performedBy);
         quoteRepository.save(quote);
 
     }
@@ -316,6 +335,12 @@ public class QuoteServiceImpl implements QuoteService{
                 qi.setSelected(Boolean.TRUE.equals(qi.getWasSelectedBefore()));
             }
         }
+        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
+        String changedDetails = "Restore Quote ID: " + quote.getId() +
+                ", Status: " + quote.getStatus() ;
+
+
+        auditLogService.logAction(AuditAction.QUOTE_RESTORED, quote, changedDetails, performedBy);
         quoteRepository.save(quote);
     }
 
@@ -342,7 +367,12 @@ public class QuoteServiceImpl implements QuoteService{
         quote.setUpdatedAt(LocalDateTime.now());
 
         quoteRepository.save(quote);
+        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
+        String changedDetails = "Quote Binded with Quote ID: " + quote.getId() +
+                ", Status: " + quote.getStatus() ;
 
+
+        auditLogService.logAction(AuditAction.QUOTE_BOUND, quote, changedDetails, performedBy);
         // Optional: trigger async confirmation email
         // asyncEventPublisher.sendBindConfirmation(quote);
     }

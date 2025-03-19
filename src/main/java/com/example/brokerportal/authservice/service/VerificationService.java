@@ -59,7 +59,7 @@ public class VerificationService {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "User verified and registered successfully!");
         response.put("accessToken", accessToken);
-        response.put("refreshToken", refreshToken);
+        //response.put("refreshToken", refreshToken);
 
         return ResponseEntity.ok(response);
     }

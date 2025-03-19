@@ -6,6 +6,7 @@ import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.dto.PropertyInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.AuditAction;
 import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
@@ -32,6 +33,7 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
     private final QuoteRepository quoteRepository;
     private final QuoteInsuranceRepository quoteInsuranceRepository;
     private final UserService userService;
+    private final AuditLogService auditLogService;
     @Override
     @Transactional
     public PropertyInsuranceDTO createPropertyInsurance(Long quoteId, PropertyInsuranceDTO dto){
@@ -68,6 +70,10 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
 
         propertyInsuranceRepository.save(propertyEntity);
         quoteInsuranceRepository.save(quoteInsurance);
+
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Created Property Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.PROPERTY_INSURANCE_CREATED, quote, details, performedBy);
         return  PropertyInsuranceMapper.toDTO(propertyEntity,quoteInsurance.getCoverages());
 
     }
@@ -109,6 +115,11 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
         propertyInsuranceRepository.save(propertyEntity);
         quoteInsuranceRepository.save(quoteInsurance);
 
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Updated Property Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.PROPERTY_INSURANCE_UPDATED, quote, details, performedBy);
+
+
         return PropertyInsuranceMapper.toDTO(propertyEntity, quoteInsurance.getCoverages());
     }
 
@@ -148,8 +159,15 @@ public class PropertyInsuranceServiceImpl implements PropertyInsuranceService{
             log.info("PropertyInsurance marked as deleted. ID: {}", propertyInsurance.getId());
         }
 
+
+
         insurance.setSelected(false);
         quoteInsuranceRepository.save(insurance);
+
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Soft_deleted Property Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.PROPERTY_INSURANCE_SOFT_DELETED, quote, details, performedBy);
+
     }
 
 

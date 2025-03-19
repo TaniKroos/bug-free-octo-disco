@@ -4,9 +4,11 @@ import com.example.brokerportal.authservice.entities.User;
 import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.entities.Quote;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
+import com.example.brokerportal.quoteservice.enums.AuditAction;
 import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.repositories.QuoteRepository;
+import com.example.brokerportal.quoteservice.service.AuditLogService;
 import com.example.brokerportal.quoteservice.service.PremiumCalculationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ public class PremiumCalculationServiceImpl implements PremiumCalculationService 
     private final PropertyPremiumCalculatorService propertyPremiumCalculatorService;
     private final GeneralLiabilityPremiumCalculatorService generalPremiumCalculatorService;
     private final UserService userService;
+    private final AuditLogService auditLogService;
 
     @Override
     public void calculatePremiumForQuote(Long quoteId) {
@@ -45,6 +48,14 @@ public class PremiumCalculationServiceImpl implements PremiumCalculationService 
                 default -> log.warn("Unknown insurance type: {}", insurance.getInsuranceType());
             }
         }
+
+        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
+        String changedDetails = "Premium generated for Quote ID: " + quote.getId() +
+                ", Status: " + quote.getStatus() ;
+
+
+        auditLogService.logAction(AuditAction.PREMIUM_CALCULATED, quote, changedDetails, performedBy);
+
     }
     @Override
     public Double getPremium(Long quoteId){

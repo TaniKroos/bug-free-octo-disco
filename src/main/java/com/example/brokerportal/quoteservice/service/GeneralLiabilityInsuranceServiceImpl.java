@@ -5,6 +5,7 @@ import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.CoverageDTO;
 import com.example.brokerportal.quoteservice.dto.GeneralLiabilityInsuranceDTO;
 import com.example.brokerportal.quoteservice.entities.*;
+import com.example.brokerportal.quoteservice.enums.AuditAction;
 import com.example.brokerportal.quoteservice.enums.QuoteStatus;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
@@ -32,7 +33,7 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
     private final QuoteRepository quoteRepository;
     private final QuoteInsuranceRepository quoteInsuranceRepository;
     private final UserService userService;
-
+    private final AuditLogService auditLogService;
     @Override
     @Transactional
     public GeneralLiabilityInsuranceDTO createGeneralLiabilityInsurance(Long quoteId, GeneralLiabilityInsuranceDTO dto) {
@@ -70,7 +71,9 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
 
         generalLiabilityInsuranceRepository.save(generalEntity);
         quoteInsuranceRepository.save(quoteInsurance);
-
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Created General Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.GENERAL_INSURANCE_CREATED, quote, details, performedBy);
         return GeneralLiabilityInsuranceMapper.toDTO(generalEntity, quoteInsurance.getCoverages());
     }
 
@@ -113,6 +116,10 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
         generalLiabilityInsuranceRepository.save(generalEntity);
         quoteInsuranceRepository.save(quoteInsurance);
 
+
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Updated General Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.GENERAL_INSURANCE_UPDATED, quote, details, performedBy);
         return GeneralLiabilityInsuranceMapper.toDTO(generalEntity, quoteInsurance.getCoverages());
     }
 
@@ -154,6 +161,10 @@ public class GeneralLiabilityInsuranceServiceImpl implements GeneralLiabilityIns
 
         insurance.setSelected(false);
         quoteInsuranceRepository.save(insurance);
+
+        String performedBy = userService.getCurrentUser().getEmail();
+        String details = "Soft_deleted General Insurance for Quote ID: " + quoteId;
+        auditLogService.logAction(AuditAction.GENERAL_INSURANCE_SOFT_DELETED, quote, details, performedBy);
     }
 
     private void authorizeBrokerAccess(QuoteInsurance quoteInsurance) {
