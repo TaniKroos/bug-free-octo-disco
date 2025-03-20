@@ -3,6 +3,8 @@ package com.example.brokerportal.quoteservice.controller;
 
 import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
+import com.example.brokerportal.quoteservice.dto.QuoteSearchFilterDTO;
+import com.example.brokerportal.quoteservice.dto.QuoteSummaryDTO;
 import com.example.brokerportal.quoteservice.service.QuoteService;
 import com.example.brokerportal.quoteservice.service.RateLimiterService;
 import jakarta.annotation.PostConstruct;
@@ -81,4 +83,15 @@ public class QuoteController {
         quoteService.bindQuote(id);
         return ResponseEntity.ok("Quote bound successfully!");
     }
+    @PostMapping("/search")
+    public ResponseEntity<List<QuoteSummaryDTO>> searchQuotes(@RequestBody QuoteSearchFilterDTO filter) {
+        try {
+            List<QuoteSummaryDTO> result = quoteService.searchQuotes(filter);
+            return ResponseEntity.ok(result);
+        } catch (Exception ex) {
+            ex.printStackTrace(); // This will log the full cause in console
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

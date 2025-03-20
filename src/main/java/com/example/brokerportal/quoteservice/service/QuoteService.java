@@ -2,6 +2,8 @@ package com.example.brokerportal.quoteservice.service;
 
 import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
+import com.example.brokerportal.quoteservice.dto.QuoteSearchFilterDTO;
+import com.example.brokerportal.quoteservice.dto.QuoteSummaryDTO;
 
 import java.util.List;
 
@@ -14,5 +16,7 @@ public interface QuoteService {
     List<QuoteDTO> findByBrokerIdAndDeletedTrue();
     void restoreQuote(Long id);
     void bindQuote(Long id);
+    List<QuoteSummaryDTO> searchQuotes(QuoteSearchFilterDTO filter);
+
 
 }

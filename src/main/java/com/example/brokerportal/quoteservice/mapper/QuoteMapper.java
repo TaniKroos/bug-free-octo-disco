@@ -1,9 +1,12 @@
 package com.example.brokerportal.quoteservice.mapper;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
+import com.example.brokerportal.quoteservice.dto.QuoteSummaryDTO;
 import com.example.brokerportal.quoteservice.entities.Quote;
 import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class QuoteMapper {
@@ -49,5 +52,35 @@ public class QuoteMapper {
                 .updatedAt(dto.getUpdatedAt())
                 .deleted(dto.isDeleted())
                 .build();
+    }
+
+    public static  QuoteSummaryDTO toSummaryDTO(Quote quote) {
+
+        if (quote == null) {
+            return null;
+        }
+        QuoteSummaryDTO dto = new QuoteSummaryDTO();
+        dto.setQuoteId(quote.getId());
+        dto.setClientName(quote.getClient() != null ? quote.getClient().getClientName() : null);
+        dto.setStatus(quote.getStatus());
+
+
+        // Extract selected insurance types
+        List<String> insuranceTypes = quote.getInsurances() != null ?
+                quote.getInsurances().stream()
+                        .filter(QuoteInsurance::isSelected)
+                        .map(QuoteInsurance::getInsuranceType)
+                        .collect(Collectors.toList()) : new ArrayList<>();
+        dto.setInsuranceTypes(insuranceTypes);
+
+        // Sum of all premiums
+        Double totalPremium = quote.getInsurances() != null ?
+                quote.getInsurances().stream()
+                        .filter(qi -> qi.isSelected() && qi.getPremium() != null && !qi.getPremium().isDeleted())
+                        .mapToDouble(qi -> qi.getPremium().getTotalPremium() != null ? qi.getPremium().getTotalPremium() : 0.0)
+                        .sum() : 0.0;
+        dto.setTotalPremium(totalPremium);
+
+        return dto;
     }
 }

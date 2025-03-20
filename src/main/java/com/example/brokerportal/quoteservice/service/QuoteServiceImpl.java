@@ -3,10 +3,7 @@ package com.example.brokerportal.quoteservice.service;
 import com.example.brokerportal.authservice.entities.User;
 import com.example.brokerportal.authservice.repository.UserRepository;
 import com.example.brokerportal.authservice.service.UserService;
-import com.example.brokerportal.quoteservice.dto.ClientDTO;
-import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
-import com.example.brokerportal.quoteservice.dto.QuoteDTO;
-import com.example.brokerportal.quoteservice.dto.QuoteInsuranceDTO;
+import com.example.brokerportal.quoteservice.dto.*;
 import com.example.brokerportal.quoteservice.entities.*;
 import com.example.brokerportal.quoteservice.enums.AuditAction;
 import com.example.brokerportal.quoteservice.enums.QuoteStatus;
@@ -14,6 +11,7 @@ import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundExceptio
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
 import com.example.brokerportal.quoteservice.repositories.*;
+import com.example.brokerportal.quoteservice.specifications.QuoteSpecificationBuilder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,10 +58,22 @@ public class QuoteServiceImpl implements QuoteService{
         quote.setBroker(userService.getCurrentUser()); //  correct place
 
         if (quoteDTO.getClient() != null) {
-            Client client = ClientMapper.toEntity(quoteDTO.getClient());
-            client = clientRepository.save(client); // ID is auto-generated here
+            Optional<Client> existingClientOpt = clientRepository
+                    .findByClientNameAndEmailAndContactNumber(quoteDTO.getClient().getClientName(), quoteDTO.getClient().getEmail(), quoteDTO.getClient().getContactNumber());
+            Client client = existingClientOpt.orElseGet(() -> {
+                Client newClient = new Client();
+                newClient.setClientName(quoteDTO.getClient().getClientName());
+                newClient.setBusinessType(quoteDTO.getClient().getBusinessType());
+                newClient.setIndustryType(quoteDTO.getClient().getIndustryType());
+                newClient.setContactNumber(quoteDTO.getClient().getContactNumber());
+                newClient.setEmail(quoteDTO.getClient().getEmail());
+                newClient.setAddress(quoteDTO.getClient().getAddress());
+                newClient.setBroker(userService.getCurrentUser());
+                return clientRepository.save(newClient);
+            });
             quote.setClient(client);
         }
+
         Quote saved = quoteRepository.save(quote);
         if(quoteDTO.getInsurances() != null && !quoteDTO.getInsurances().isEmpty()){
             quoteInsuranceService.mapAndAttachInsurancesToQuote(quote,quoteDTO.getInsurances());
@@ -172,7 +183,9 @@ public class QuoteServiceImpl implements QuoteService{
                     generalInsuranceRepository.save(quoteInsurance.getGeneralInsurance());
                 }
 
-                quoteInsurance.getPremium().setDeleted(true);
+                if(quoteInsurance.getPremium() != null){
+                    quoteInsurance.getPremium().setDeleted(true);
+                }
 
             }
         }
@@ -377,6 +390,17 @@ public class QuoteServiceImpl implements QuoteService{
         // asyncEventPublisher.sendBindConfirmation(quote);
     }
 
+
+
+    // Search filter for quotes
+    @Override
+    public List<QuoteSummaryDTO> searchQuotes(QuoteSearchFilterDTO filterDTO){
+        filterDTO.setBrokerId(userService.getCurrentUser().getId());
+        List<Quote> quotes = quoteRepository.findAll(QuoteSpecificationBuilder.build(filterDTO));
+        return  quotes.stream()
+                .map(QuoteMapper::toSummaryDTO)
+                .collect(Collectors.toList());
+    }
 }
 
 

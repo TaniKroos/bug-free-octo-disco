@@ -4,6 +4,8 @@ import com.example.brokerportal.authservice.entities.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "clients")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -21,5 +23,8 @@ public class Client {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "broker_id")
     private User broker;
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
+    private List<Quote> quotes;
+
 
 }
