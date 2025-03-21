@@ -1,0 +1,14 @@
+package com.example.brokerportal.quoteservice.enums;
+
+public enum CoverageType {
+    DATA_BREACH,
+    RANSOMWARE,
+    SYSTEM_FAILURE,
+    THIRD_PARTY_LIABILITY,
+    BUSINESS_INTERRUPTION,
+    NETWORK_SECURITY,
+    PRIVACY_REGULATION,
+    SOCIAL_ENGINEERING,
+    INCIDENT_RESPONSE,
+    CLOUD_OUTAGE
+}

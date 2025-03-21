@@ -40,64 +40,69 @@ public class GeneralLiabilityPremiumCalculatorServiceImpl implements GeneralLiab
 
         log.info("Calculating General Liability Premium for QuoteInsurance ID: {}", quoteInsuranceId);
 
-
         BigDecimal basePremium = BigDecimal.ZERO;
 
         if (insurance.getCoverageLimit() != null) {
-            basePremium = basePremium.add(insurance.getCoverageLimit().multiply(new BigDecimal("0.02"))); // 2% of coverage limit
+            basePremium = basePremium.add(insurance.getCoverageLimit().multiply(BigDecimal.valueOf(0.02)));
         }
 
         if (insurance.getAnnualPayroll() != null) {
-            basePremium = basePremium.add(insurance.getAnnualPayroll().multiply(new BigDecimal("0.01"))); // 1% of payroll
+            basePremium = basePremium.add(insurance.getAnnualPayroll().multiply(BigDecimal.valueOf(0.01)));
         }
 
         if (insurance.getDeductible() != null) {
-            basePremium = basePremium.subtract(insurance.getDeductible().multiply(new BigDecimal("0.005"))); // 0.5% of deductible
+            basePremium = basePremium.subtract(insurance.getDeductible().multiply(BigDecimal.valueOf(0.005)));
         }
 
-        if ("HIGH".equalsIgnoreCase(insurance.getRiskClassification())) {
-            basePremium = basePremium.multiply(new BigDecimal("1.2"));
-        } else if ("LOW".equalsIgnoreCase(insurance.getRiskClassification())) {
-            basePremium = basePremium.multiply(new BigDecimal("0.9"));
-        }
+        basePremium = basePremium.max(BigDecimal.ZERO);
 
-        if (Boolean.TRUE.equals(insurance.getHasPriorClaims()) && insurance.getNumberOfClaims() != null) {
-            basePremium = basePremium.add(BigDecimal.valueOf(insurance.getNumberOfClaims()).multiply(new BigDecimal("100")));
-        }
+        BigDecimal riskFactor = getRiskFactor(insurance);
+        basePremium = basePremium.multiply(riskFactor).setScale(2, RoundingMode.HALF_UP);
 
-        if (insurance.getBusinessAreaSqft() != null) {
-            basePremium = basePremium.add(BigDecimal.valueOf(insurance.getBusinessAreaSqft()).multiply(new BigDecimal("0.1")));
-        }
-
-        if ("HIGH".equalsIgnoreCase(insurance.getClientInteractionLevel())) {
-            basePremium = basePremium.multiply(new BigDecimal("1.1"));
-        }
-
-
-        if (Boolean.TRUE.equals(insurance.getAdditionalInsuredRequired())) {
-            basePremium = basePremium.add(new BigDecimal("200"));
-        }
-
-
-        basePremium = basePremium.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal taxes = basePremium.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal taxes = basePremium.multiply(BigDecimal.valueOf(0.18)).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalPremium = basePremium.add(taxes).setScale(2, RoundingMode.HALF_UP);
 
         Premium premium = quoteInsurance.getPremium();
-
         if (premium == null) {
             premium = new Premium();
             premium.setQuoteInsurance(quoteInsurance);
         }
+
         premium.setBasePremium(basePremium.doubleValue());
         premium.setTaxes(taxes.doubleValue());
         premium.setTotalPremium(totalPremium.doubleValue());
-
 
         premiumRepository.save(premium);
 
         log.info("General Liability Premium calculated: base={}, taxes={}, total={}",
                 basePremium, taxes, totalPremium);
+    }
+
+    private static BigDecimal getRiskFactor(GeneralLiabilityInsurance insurance) {
+        int factor = 1;
+
+        if ("HIGH".equalsIgnoreCase(insurance.getRiskClassification())) {
+            factor += 1;
+        } else if ("LOW".equalsIgnoreCase(insurance.getRiskClassification())) {
+            factor -= 1;
+        }
+
+        if (Boolean.TRUE.equals(insurance.getHasPriorClaims()) && insurance.getNumberOfClaims() != null) {
+            factor += insurance.getNumberOfClaims();
+        }
+
+        if (insurance.getBusinessAreaSqft() != null && insurance.getBusinessAreaSqft() > 5000) {
+            factor += 1;
+        }
+
+        if ("HIGH".equalsIgnoreCase(insurance.getClientInteractionLevel())) {
+            factor += 1;
+        }
+
+        if (Boolean.TRUE.equals(insurance.getAdditionalInsuredRequired())) {
+            factor += 1;
+        }
+
+        return BigDecimal.valueOf(Math.max(factor, 1)).setScale(2, RoundingMode.HALF_UP);
     }
 }

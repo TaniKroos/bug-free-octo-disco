@@ -38,4 +38,8 @@ public class QuoteInsurance {
 
     @Column(name = "was_selected_before")
     private Boolean wasSelectedBefore;
+
+    @OneToMany(mappedBy = "quoteInsurance", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CoveragePremium> coveragePremiums = new ArrayList<>();
+
 }

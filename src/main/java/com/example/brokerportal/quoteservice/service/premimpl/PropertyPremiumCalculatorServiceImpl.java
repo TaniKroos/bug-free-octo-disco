@@ -39,77 +39,32 @@ public class PropertyPremiumCalculatorServiceImpl implements PropertyPremiumCalc
 
         log.info("Calculating Property Insurance Premium for QuoteInsurance ID: {}", quoteInsuranceId);
 
-
         BigDecimal basePremium = BigDecimal.ZERO;
 
         if (insurance.getPropertyValue() != null) {
-            basePremium = basePremium.add(insurance.getPropertyValue().multiply(new BigDecimal("0.012"))); //
-    }
-
+            basePremium = basePremium.add(insurance.getPropertyValue().multiply(BigDecimal.valueOf(0.012)));
+        }
         if (insurance.getEquipmentValue() != null) {
-            basePremium = basePremium.add(insurance.getEquipmentValue().multiply(new BigDecimal("0.01")));
+            basePremium = basePremium.add(insurance.getEquipmentValue().multiply(BigDecimal.valueOf(0.01)));
         }
-
         if (insurance.getInventoryValue() != null) {
-            basePremium = basePremium.add(insurance.getInventoryValue().multiply(new BigDecimal("0.008")));
+            basePremium = basePremium.add(insurance.getInventoryValue().multiply(BigDecimal.valueOf(0.008)));
         }
-
         if (insurance.getCoverageLimit() != null) {
-            basePremium = basePremium.add(insurance.getCoverageLimit().multiply(new BigDecimal("0.01")));
+            basePremium = basePremium.add(insurance.getCoverageLimit().multiply(BigDecimal.valueOf(0.01)));
         }
-
         if (insurance.getDeductible() != null) {
-            basePremium = basePremium.subtract(insurance.getDeductible().multiply(new BigDecimal("0.004")));
+            basePremium = basePremium.subtract(insurance.getDeductible().multiply(BigDecimal.valueOf(0.004)));
         }
-
-
-        if (insurance.getBuildingAge() != null && insurance.getBuildingAge() > 20) {
-            basePremium = basePremium.add(new BigDecimal("300"));
-        }
-
-        if (Boolean.FALSE.equals(insurance.getHasFireAlarmSystem())) {
-            basePremium = basePremium.add(new BigDecimal("200"));
-        }
-
-        if (Boolean.FALSE.equals(insurance.getHasSecuritySystem())) {
-            basePremium = basePremium.add(new BigDecimal("150"));
-        }
-
-        if (Boolean.FALSE.equals(insurance.getHasSprinklerSystem())) {
-            basePremium = basePremium.add(new BigDecimal("250"));
-        }
-
-        if (Boolean.FALSE.equals(insurance.getIsCompliantWithLocalCodes())) {
-            basePremium = basePremium.add(new BigDecimal("500"));
-        }
-
-        if (Boolean.TRUE.equals(insurance.getBusinessInterruptionCoverRequired()) && insurance.getBusinessInterruptionLimit() != null) {
-            basePremium = basePremium.add(insurance.getBusinessInterruptionLimit().multiply(new BigDecimal("0.015"))); // 1.5% of BI limit
-        }
-
-
-        if (insurance.getPropertyType() != null) {
-            switch (insurance.getPropertyType()) {
-                case INDUSTRIAL -> basePremium = basePremium.multiply(new BigDecimal("1.2"));
-                case COMMERCIAL -> basePremium = basePremium.multiply(new BigDecimal("1.1"));
-
-            }
-        }
-
-
-        if (insurance.getConstructionType() != null) {
-            switch (insurance.getConstructionType()) {
-                case WOOD -> basePremium = basePremium.multiply(new BigDecimal("1.15"));
-                case STEEL -> basePremium = basePremium.multiply(new BigDecimal("1.05"));
-                case CONCRETE -> basePremium = basePremium.multiply(new BigDecimal("0.95"));
-            }
-        }
-
 
         basePremium = basePremium.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal taxes = basePremium.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalPremium = basePremium.add(taxes).setScale(2, RoundingMode.HALF_UP);
 
+        // Additional inline risk factors
+        BigDecimal additionalFactors = getRiskFactor(insurance);
+
+        BigDecimal baseWithFactors = basePremium.multiply(additionalFactors).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal taxes = baseWithFactors.multiply(BigDecimal.valueOf(0.18)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalPremium = baseWithFactors.add(taxes).setScale(2, RoundingMode.HALF_UP);
 
         Premium premium = quoteInsurance.getPremium();
         if (premium == null) {
@@ -124,5 +79,31 @@ public class PropertyPremiumCalculatorServiceImpl implements PropertyPremiumCalc
         premiumRepository.save(premium);
 
         log.info("Property Premium calculated: base={}, taxes={}, total={}", basePremium, taxes, totalPremium);
+    }
+
+    private static BigDecimal getRiskFactor(PropertyInsurance insurance) {
+        int factor = 1;
+
+        if (insurance.getBuildingAge() != null && insurance.getBuildingAge() > 20) {
+            factor += 1;
+        }
+        if (Boolean.FALSE.equals(insurance.getHasFireAlarmSystem())) {
+            factor += 1;
+        }
+        if (Boolean.FALSE.equals(insurance.getHasSecuritySystem())) {
+            factor += 1;
+        }
+        if (Boolean.FALSE.equals(insurance.getHasSprinklerSystem())) {
+            factor += 1;
+        }
+        if (Boolean.FALSE.equals(insurance.getIsCompliantWithLocalCodes())) {
+            factor += 1;
+        }
+
+        if (Boolean.TRUE.equals(insurance.getBusinessInterruptionCoverRequired()) && insurance.getBusinessInterruptionLimit() != null) {
+            factor += insurance.getBusinessInterruptionLimit().compareTo(BigDecimal.valueOf(100000)) > 0 ? 2 : 1;
+        }
+
+        return BigDecimal.valueOf(factor).setScale(2, RoundingMode.HALF_UP);
     }
 }
