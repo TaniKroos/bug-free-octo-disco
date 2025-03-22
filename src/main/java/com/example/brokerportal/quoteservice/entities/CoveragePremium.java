@@ -2,11 +2,19 @@ package com.example.brokerportal.quoteservice.entities;
 
 import com.example.brokerportal.quoteservice.enums.CoverageType;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "coverage_premium")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class CoveragePremium {
 
     @Id
@@ -24,8 +32,8 @@ public class CoveragePremium {
 
     private BigDecimal premiumAmount;
 
-    @Column(columnDefinition = "TEXT")
-    private String calculationDetailsJson;
+//    @Column(columnDefinition = "TEXT")
+//    private String calculationDetailsJson;
 
     private Boolean deleted = false;
 }

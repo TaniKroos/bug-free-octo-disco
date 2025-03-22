@@ -8,6 +8,7 @@ import com.example.brokerportal.quoteservice.entities.QuoteInsurance;
 import com.example.brokerportal.quoteservice.mapper.CoverageMapper;
 import com.example.brokerportal.quoteservice.mapper.PremiumMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,7 @@ public class InsuranceMapperUtil {
 
 
         if (coverageDTOs != null) {
+            quoteInsurance.getCoverages().clear();
             List<Coverage> coverages = coverageDTOs.stream()
                     .map(dto -> CoverageMapper.toEntity(dto, quoteInsurance))
                     .collect(Collectors.toList());
@@ -40,7 +42,7 @@ public class InsuranceMapperUtil {
             List<CoverageDTO> coverageDTOs,
             QuoteInsurance quoteInsurance
     ) {
-
+        // Update or create Premium
         Premium existingPremium = quoteInsurance.getPremium();
         if (existingPremium == null) {
             existingPremium = new Premium();
@@ -48,37 +50,45 @@ public class InsuranceMapperUtil {
             quoteInsurance.setPremium(existingPremium);
         }
 
-
         if (premiumDTO != null) {
             existingPremium.setBasePremium(premiumDTO.getBasePremium());
             existingPremium.setTaxes(premiumDTO.getTaxes());
             existingPremium.setTotalPremium(premiumDTO.getTotalPremium());
         }
 
+        // Update Coverages
         if (coverageDTOs != null) {
-            List<Coverage> existingCoverages = quoteInsurance.getCoverages();
-            List<Long> incomingIds = coverageDTOs.stream()
-                    .map(CoverageDTO::getId)
-                    .collect(Collectors.toList());
+            List<Coverage> updatedCoverages = new ArrayList<>();
 
             for (CoverageDTO dto : coverageDTOs) {
                 if (dto.getId() != null) {
-                    existingCoverages.stream()
+                    // Try to find matching coverage in existing list
+                    Coverage existing = quoteInsurance.getCoverages().stream()
                             .filter(c -> c.getId().equals(dto.getId()))
                             .findFirst()
-                            .ifPresent(c -> {
-                                c.setCoverageType(dto.getCoverageType());
-                                c.setCoverageAmount(dto.getCoverageAmount());
-                                c.setDescription(dto.getDescription());
-                            });
+                            .orElse(null);
+
+                    if (existing != null) {
+                        existing.setCoverageType(dto.getCoverageType());
+                        existing.setCoverageAmount(dto.getCoverageAmount());
+                        existing.setDescription(dto.getDescription());
+                        updatedCoverages.add(existing);
+                    } else {
+                        // ID exists in DTO but not in DB — might be stale ID, create new
+                        Coverage newCoverage = CoverageMapper.toEntity(dto, quoteInsurance);
+                        updatedCoverages.add(newCoverage);
+                    }
                 } else {
+                    // New coverage
                     Coverage newCoverage = CoverageMapper.toEntity(dto, quoteInsurance);
-                    existingCoverages.add(newCoverage);
+                    updatedCoverages.add(newCoverage);
                 }
             }
 
-
-            existingCoverages.removeIf(c -> c.getId() != null && !incomingIds.contains(c.getId()));
+            // Replace the coverages list completely
+            quoteInsurance.getCoverages().clear(); // this removes existing associations
+            quoteInsurance.getCoverages().addAll(updatedCoverages);
         }
     }
+
 }

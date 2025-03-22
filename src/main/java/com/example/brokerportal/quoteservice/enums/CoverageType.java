@@ -10,5 +10,15 @@ public enum CoverageType {
     PRIVACY_REGULATION,
     SOCIAL_ENGINEERING,
     INCIDENT_RESPONSE,
-    CLOUD_OUTAGE
+    CLOUD_OUTAGE;
+
+    public static CoverageType fromStringSafe(String value) {
+        if (value == null) return null;
+        try {
+            return CoverageType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null; // or throw custom exception if you prefer to fail fast
+        }
+    }
+
 }
