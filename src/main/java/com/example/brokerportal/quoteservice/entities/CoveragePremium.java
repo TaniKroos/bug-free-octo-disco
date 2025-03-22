@@ -2,10 +2,7 @@ package com.example.brokerportal.quoteservice.entities;
 
 import com.example.brokerportal.quoteservice.enums.CoverageType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -15,6 +12,8 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
+@Builder
 public class CoveragePremium {
 
     @Id

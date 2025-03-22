@@ -1,11 +1,11 @@
 package com.example.brokerportal.quoteservice.service.premimpl;
 
 import com.example.brokerportal.quoteservice.entities.*;
-import com.example.brokerportal.quoteservice.enums.BusinessType;
+        import com.example.brokerportal.quoteservice.enums.BusinessType;
 import com.example.brokerportal.quoteservice.enums.CoverageType;
 import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundException;
 import com.example.brokerportal.quoteservice.repositories.*;
-import jakarta.transaction.Transactional;
+        import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -54,9 +54,19 @@ public class CyberPremiumCalculatorServiceImpl implements CyberPremiumCalculator
                 .multiply(BigDecimal.valueOf(baseRate))
                 .setScale(2, RoundingMode.HALF_UP);
 
+
+        // Store coverage-specific premiums
+        calculateAndStoreCoveragePremiums(quoteInsurance, insurance);
+
+
+        List<CoveragePremium> cps = coveragePremiumRepository.findByQuoteInsurance(quoteInsurance);
+        for(CoveragePremium cp:cps){
+            basePremium = basePremium.add(cp.getPremiumAmount());
+
+        }
+
         BigDecimal taxes = basePremium.multiply(BigDecimal.valueOf(0.18)).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalPremium = basePremium.add(taxes);
-
         // Save base premium and taxes in Premium table
         Premium premium = Optional.ofNullable(quoteInsurance.getPremium()).orElseGet(Premium::new);
         premium.setQuoteInsurance(quoteInsurance);
@@ -67,8 +77,7 @@ public class CyberPremiumCalculatorServiceImpl implements CyberPremiumCalculator
         premiumRepository.save(premium);
         quoteInsurance.setPremium(premium);
         quoteInsuranceRepository.save(quoteInsurance);
-        // Store coverage-specific premiums
-        calculateAndStoreCoveragePremiums(quoteInsurance, insurance);
+
 
         log.info("Cyber Premium calculated: base={}, taxes={}, total={}", basePremium, taxes, totalPremium);
     }
@@ -77,30 +86,31 @@ public class CyberPremiumCalculatorServiceImpl implements CyberPremiumCalculator
         List<Coverage> selectedCoverages = quoteInsurance.getCoverages();
 
         // Soft delete existing coverage premiums
-        List<CoveragePremium> existing = coveragePremiumRepository.findByQuoteInsurance(quoteInsurance);
-        existing.forEach(cp -> cp.setDeleted(true));
-        coveragePremiumRepository.saveAll(existing);
-
-        // Create and save new coverage premiums
         for (Coverage coverage : selectedCoverages) {
+            CoverageType type = CoverageType.fromStringSafe(coverage.getCoverageType());
+            if (type == null) {
+                log.warn("Invalid CoverageType: {}", coverage.getCoverageType());
+                continue;
+            }
 
-                CoverageType type = CoverageType.fromStringSafe(coverage.getCoverageType());
-                if (type == null) {
-                    System.err.println("Invalid or unmapped CoverageType: " + coverage.getCoverageType());
-                    continue; // skip invalid ones
-                }
-                BigDecimal coverageAmount = coverage.getCoverageAmount();
-                BigDecimal premiumAmount = calculatePremiumByCoverageType(type, insurance);
+            BigDecimal coverageAmount = coverage.getCoverageAmount();
+            BigDecimal premiumAmount = calculatePremiumByCoverageType(type, insurance);
 
-                CoveragePremium coveragePremium = new CoveragePremium();
-                coveragePremium.setQuoteInsurance(quoteInsurance);
-                coveragePremium.setCoverageType(type);
-                coveragePremium.setCoverageAmount(coverageAmount);
-                coveragePremium.setPremiumAmount(premiumAmount);
-                coveragePremium.setDeleted(false);
+            // Check if already exists
+            CoveragePremium coveragePremium = coveragePremiumRepository
+                    .findByQuoteInsuranceAndCoverageTypeAndDeletedFalse(quoteInsurance, type)
+                    .orElseGet(() -> {
+                        CoveragePremium cp = new CoveragePremium();
+                        cp.setQuoteInsurance(quoteInsurance);
+                        cp.setCoverageType(type);
+                        return cp;
+                    });
 
-                coveragePremiumRepository.save(coveragePremium);
+            coveragePremium.setCoverageAmount(coverageAmount);
+            coveragePremium.setPremiumAmount(premiumAmount);
+            coveragePremium.setDeleted(false);
 
+            coveragePremiumRepository.save(coveragePremium);
         }
     }
 
