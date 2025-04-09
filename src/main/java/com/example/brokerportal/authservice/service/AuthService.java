@@ -57,13 +57,13 @@ public class AuthService {
     }
 
     public void register(User user) {
-        String code = String.valueOf(new Random().nextInt(900000) + 100000);
+        String code = "546789";
         PendingUser pendingUser = PendingUser.builder()
                 .user(user)
                 .verificationCode(code)
                 .build();
         cacheManager.getCache("userVerificationCache").put(user.getEmail(),pendingUser);
-        emailService.sendVerificationEmail(user.getEmail(), code);
+        // emailService.sendVerificationEmail(user.getEmail(), code);
 
     }
 

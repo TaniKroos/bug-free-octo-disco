@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/premium")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class PremiumCalculationController {
 
     private final PremiumCalculationService premiumCalculationService;

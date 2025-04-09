@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/cyber-insurance")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class CyberInsuranceController {
     private final CyberInsuranceService cyberInsuranceService;
 

@@ -14,6 +14,7 @@ import com.example.brokerportal.quoteservice.repositories.*;
 import com.example.brokerportal.quoteservice.specifications.QuoteSpecificationBuilder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuoteServiceImpl implements QuoteService{
@@ -315,6 +317,7 @@ public class QuoteServiceImpl implements QuoteService{
     @Override
     @Transactional
     public void restoreQuote(Long id){
+        log.error("Hi from restoreQuote");
         Quote quote = quoteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Quote with this id does not exist"));
         authorizeBrokerAccess(quote);
@@ -364,7 +367,9 @@ public class QuoteServiceImpl implements QuoteService{
                 .orElseThrow(() -> new RuntimeException("Quote not found with id: " + id));
 
         authorizeBrokerAccess(quote);
-
+        if(quote.isDeleted()){
+            throw new IllegalStateException("Quote is marked as deleted and cannot be bounded");
+        }
         if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
             throw new IllegalStateException("Quote is already bound and cannot be modified.");
         }

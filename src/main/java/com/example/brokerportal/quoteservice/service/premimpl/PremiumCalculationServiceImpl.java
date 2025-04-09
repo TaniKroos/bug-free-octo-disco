@@ -53,7 +53,7 @@ public class PremiumCalculationServiceImpl implements PremiumCalculationService 
         String changedDetails = "Premium generated for Quote ID: " + quote.getId() +
                 ", Status: " + quote.getStatus() ;
 
-
+        quote.setStatus("PENDING");
         auditLogService.logAction(AuditAction.PREMIUM_CALCULATED, quote, changedDetails, performedBy);
 
     }
@@ -64,9 +64,9 @@ public class PremiumCalculationServiceImpl implements PremiumCalculationService 
         if(quote.isDeleted()){
             throw new ResourceNotFoundException("QUote with this id has been marked soft deleted");
         }
-        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
-            throw new IllegalStateException("Quote is already bound and cannot be modified.");
-        }
+//        if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
+//            throw new IllegalStateException("Quote is already bound and cannot be modified.");
+//        }
         authorizeBrokerAccess(quote);
         Double finalprem = 0.0;
         for(QuoteInsurance qi:quote.getInsurances()){

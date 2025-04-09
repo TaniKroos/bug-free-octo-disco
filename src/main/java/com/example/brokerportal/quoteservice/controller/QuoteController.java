@@ -19,6 +19,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/quotes")
+@CrossOrigin(origins = "http://localhost:4200")
 public class QuoteController {
     private final QuoteService quoteService;
     private final RateLimiterService rateLimiterService;
