@@ -6,11 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 public class QuoteSpecificationBuilder {
 
-    public static Specification<Quote> build(QuoteSearchFilterDTO filter) {
-        return Specification.where(QuoteSpecification.hasClientName(filter.getClientName()))
-                .and(QuoteSpecification.hasStatus(filter.getStatus()))
-                .and(QuoteSpecification.hasBrokerId(filter.getBrokerId()))
-                .and(QuoteSpecification.hasInsuranceType(filter.getInsuranceType()));
-
+    public static Specification<Quote> build(QuoteSearchFilterDTO filter, Long brokerId) {
+        return QuoteSpecification.withFilters(filter, brokerId);
     }
 }

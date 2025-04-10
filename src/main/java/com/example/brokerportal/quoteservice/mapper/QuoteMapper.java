@@ -80,6 +80,7 @@ public class QuoteMapper {
         dto.setQuoteId(quote.getId());
         dto.setClientName(quote.getClient() != null ? quote.getClient().getClientName() : null);
         dto.setStatus(quote.getStatus());
+        dto.setCreatedAt(quote.getCreatedAt());
 
 
         // Extract selected insurance types

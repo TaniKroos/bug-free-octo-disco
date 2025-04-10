@@ -10,13 +10,13 @@ import java.util.List;
 public interface QuoteService {
     QuoteDTO createQuote(QuoteDTO quoteDTO);
     QuoteDTO updateQuote(Long id, QuoteDTO quoteDTO);
-    PagedResponseDTO<QuoteDTO> getQuotesByBrokerId(  int page, int size);
+    PagedResponseDTO<QuoteSummaryDTO> getQuotesByBrokerId(  int page, int size);
     QuoteDTO getQuoteById(Long id);
     void softDeleteQuote(Long id);
     List<QuoteDTO> findByBrokerIdAndDeletedTrue();
     void restoreQuote(Long id);
     void bindQuote(Long id);
-    List<QuoteSummaryDTO> searchQuotes(QuoteSearchFilterDTO filter);
+    PagedResponseDTO<QuoteSummaryDTO> searchQuotesByBroker(QuoteSearchFilterDTO filter, int page, int size);
 
 
 }

@@ -65,11 +65,11 @@ public class QuoteController {
         return ResponseEntity.ok("Quote with ID " + id + " has been soft deleted along with its insurances.");
     }
     @GetMapping("/by-broker")
-    public ResponseEntity<PagedResponseDTO<QuoteDTO>> getQuoteByBrokerId(
+    public ResponseEntity<PagedResponseDTO<QuoteSummaryDTO>> getQuoteByBrokerId(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
-        PagedResponseDTO<QuoteDTO> ls = quoteService.getQuotesByBrokerId(page,size);
+        PagedResponseDTO<QuoteSummaryDTO> ls = quoteService.getQuotesByBrokerId(page,size);
         return ResponseEntity.ok(ls);
     }
 
@@ -85,14 +85,19 @@ public class QuoteController {
         return ResponseEntity.ok("Quote bound successfully!");
     }
     @PostMapping("/search")
-    public ResponseEntity<List<QuoteSummaryDTO>> searchQuotes(@RequestBody QuoteSearchFilterDTO filter) {
+    public ResponseEntity<PagedResponseDTO<QuoteSummaryDTO>> searchQuotes(
+            @RequestBody QuoteSearchFilterDTO filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
         try {
-            List<QuoteSummaryDTO> result = quoteService.searchQuotes(filter);
+            PagedResponseDTO<QuoteSummaryDTO> result = quoteService.searchQuotesByBroker(filter, page, size);
             return ResponseEntity.ok(result);
         } catch (Exception ex) {
-            ex.printStackTrace(); // This will log the full cause in console
+            ex.printStackTrace(); // You can replace with a logger if needed
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
 }

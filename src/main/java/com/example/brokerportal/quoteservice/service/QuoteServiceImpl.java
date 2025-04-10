@@ -11,6 +11,7 @@ import com.example.brokerportal.quoteservice.exceptions.ResourceNotFoundExceptio
 import com.example.brokerportal.quoteservice.mapper.ClientMapper;
 import com.example.brokerportal.quoteservice.mapper.QuoteMapper;
 import com.example.brokerportal.quoteservice.repositories.*;
+import com.example.brokerportal.quoteservice.specifications.QuoteSpecification;
 import com.example.brokerportal.quoteservice.specifications.QuoteSpecificationBuilder;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -204,20 +206,20 @@ public class QuoteServiceImpl implements QuoteService{
     }
 
     @Override
-    public PagedResponseDTO<QuoteDTO> getQuotesByBrokerId(int page, int size) {
+    public PagedResponseDTO<QuoteSummaryDTO> getQuotesByBrokerId(int page, int size) {
         User broker = userService.getCurrentUser();
         Long brokerId = broker.getId();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Quote> quotePage = quoteRepository.findByBrokerIdAndDeletedFalse(brokerId, pageable);
 
-        List<QuoteDTO> quoteDTOs = quotePage.getContent()
+        List<QuoteSummaryDTO> quoteSummaryDTOs = quotePage.getContent()
                 .stream()
-                .map(QuoteMapper::toDTO)
+                .map(QuoteMapper::toSummaryDTO)
                 .collect(Collectors.toList());
 
         return new PagedResponseDTO<>(
-                quoteDTOs,
+                quoteSummaryDTOs,
                 quotePage.getNumber(),
                 quotePage.getSize(),
                 quotePage.getTotalElements(),
@@ -399,13 +401,31 @@ public class QuoteServiceImpl implements QuoteService{
 
     // Search filter for quotes
     @Override
-    public List<QuoteSummaryDTO> searchQuotes(QuoteSearchFilterDTO filterDTO){
-        filterDTO.setBrokerId(userService.getCurrentUser().getId());
-        List<Quote> quotes = quoteRepository.findAll(QuoteSpecificationBuilder.build(filterDTO));
-        return  quotes.stream()
+    public PagedResponseDTO<QuoteSummaryDTO> searchQuotesByBroker(
+            QuoteSearchFilterDTO filter, int page, int size) {
+
+        User broker = userService.getCurrentUser();
+        Long brokerId = broker.getId();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Specification<Quote> spec = QuoteSpecification.withFilters(filter, brokerId);
+
+        Page<Quote> quotePage = quoteRepository.findAll(spec, pageable);
+
+        List<QuoteSummaryDTO> content = quotePage.getContent().stream()
                 .map(QuoteMapper::toSummaryDTO)
                 .collect(Collectors.toList());
+
+        return new PagedResponseDTO<>(
+                content,
+                quotePage.getNumber(),
+                quotePage.getSize(),
+                quotePage.getTotalElements(),
+                quotePage.getTotalPages(),
+                quotePage.isLast()
+        );
     }
+
 }
 
 

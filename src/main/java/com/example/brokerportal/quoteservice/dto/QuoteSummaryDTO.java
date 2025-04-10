@@ -15,7 +15,7 @@ public class QuoteSummaryDTO {
     private Long quoteId;
     private String clientName;
     private String status;
-
+    private LocalDateTime createdAt;
     private List<String> insuranceTypes;  // e.g., ["CYBER", "PROPERTY"]
     private Double totalPremium;
 }
