@@ -14,7 +14,7 @@ import java.util.List;
 public class PropertyInsuranceDTO {
     private Long id;  // Optional during creation; required during update
 
-    private String locationAddress;
+
 
     private PropertyType propertyType;
 

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public interface ClientRepository extends JpaRepository<Client, Long> {
     List<Client> findByBrokerId(Long brokerId); // Get clients of a broker
+    List<Client> findByEmailIgnoreCase(String email);
     Optional<Client> findByClientNameAndEmailAndContactNumber(String clientName, String email, String contactNumber);
 }
 

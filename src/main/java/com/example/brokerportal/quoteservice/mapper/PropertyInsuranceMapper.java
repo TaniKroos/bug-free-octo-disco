@@ -18,7 +18,7 @@ public class PropertyInsuranceMapper {
 
         return PropertyInsuranceDTO.builder()
                 .id(entity.getId())
-                .locationAddress(entity.getLocationAddress())
+
                 .propertyType(entity.getPropertyType())
                 .buildingAge(entity.getBuildingAge())
                 .constructionType(entity.getConstructionType())
@@ -47,7 +47,7 @@ public class PropertyInsuranceMapper {
 
         PropertyInsurance propertyInsurance = PropertyInsurance.builder()
                 .id(dto.getId())
-                .locationAddress(dto.getLocationAddress())
+
                 .propertyType(dto.getPropertyType())
                 .buildingAge(dto.getBuildingAge())
                 .constructionType(dto.getConstructionType())
@@ -82,7 +82,7 @@ public class PropertyInsuranceMapper {
     public static void updateEntityFromDTO(PropertyInsurance entity, PropertyInsuranceDTO dto, QuoteInsurance quoteInsurance) {
         if (dto == null || entity == null) return;
 
-        entity.setLocationAddress(dto.getLocationAddress());
+
         entity.setPropertyType(dto.getPropertyType());
         entity.setBuildingAge(dto.getBuildingAge());
         entity.setConstructionType(dto.getConstructionType());

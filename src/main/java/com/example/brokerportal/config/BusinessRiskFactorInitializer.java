@@ -11,26 +11,55 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BusinessRiskFactorInitializer implements CommandLineRunner {
 
-
     private final BusinessRiskFactorRepository repository;
 
     @Override
     public void run(String... args) {
-        addIfNotExists(BusinessType.HEALTHCARE, 1.3, 1.3);
-        addIfNotExists(BusinessType.OUTLET, 1.1, 1.1);
-        addIfNotExists(BusinessType.MANUFACTURING, 1.25, 1.25);
-        addIfNotExists(BusinessType.LOGISTICS, 1.2, 1.1);
-        addIfNotExists(BusinessType.BEAUTY_AND_WELLNESS, 1.15, 1.0);
+        addIfNotExists(BusinessType.HEALTHCARE, 1.3, 1.3, 0.20, 1.2, 1.0, 1.1, 1.1, 1.0, 1.3, 1.2, 1.3, 1.3);
+        addIfNotExists(BusinessType.OUTLET, 1.1, 1.1, 0.18, 1.0, 1.2, 1.0, 1.0, 1.1, 1.0, 1.0, 1.2, 1.1);
+        addIfNotExists(BusinessType.MANUFACTURING, 1.25, 1.25, 0.22, 1.3, 1.3, 1.2, 1.2, 1.4, 1.5, 1.2, 1.3, 1.0);
+        addIfNotExists(BusinessType.LOGISTICS, 1.2, 1.1, 0.19, 1.1, 1.1, 1.1, 1.1, 1.2, 1.3, 1.1, 1.2, 1.0);
+        addIfNotExists(BusinessType.BEAUTY_AND_WELLNESS, 1.15, 1.0, 0.17, 1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.0, 1.2, 1.2);
     }
 
-    private void addIfNotExists(BusinessType type, double businessRisk, double dataExposure) {
+    private void addIfNotExists(
+            BusinessType type,
+            double businessRisk,
+            double dataExposure,
+            double baseTaxRate,
+            double locationRiskFactor,
+            double floorRiskFactor,
+            double cyberComplianceFactor,
+            double constructionTypeFactor,
+            double theftProtectionFactor,
+            double occupancyRiskFactor,
+            double liabilityExposureFactor,
+            double employeeRiskFactor,
+            double clientInteractionFactor
+    ) {
         repository.findByBusinessType(type).ifPresentOrElse(
-                existing -> {}, // Already exists, do nothing
+                existing -> {},
                 () -> {
-                    BusinessRiskFactor factor = new BusinessRiskFactor();
-                    factor.setBusinessType(type);
-                    factor.setBusinessRisk(businessRisk);
-                    factor.setDataExposure(dataExposure);
+                    BusinessRiskFactor factor = BusinessRiskFactor.builder()
+                            .businessType(type)
+                            .businessRisk(businessRisk)
+                            .dataExposure(dataExposure)
+
+                            .baseTaxRate(baseTaxRate)
+                            .locationRiskFactor(locationRiskFactor)
+                            .floorRiskFactor(floorRiskFactor)
+
+                            .cyberComplianceFactor(cyberComplianceFactor)
+
+                            .constructionTypeFactor(constructionTypeFactor)
+                            .theftProtectionFactor(theftProtectionFactor)
+                            .occupancyRiskFactor(occupancyRiskFactor)
+
+                            .liabilityExposureFactor(liabilityExposureFactor)
+                            .employeeRiskFactor(employeeRiskFactor)
+                            .clientInteractionFactor(clientInteractionFactor)
+                            .build();
+
                     repository.save(factor);
                 }
         );

@@ -14,4 +14,7 @@ public class ClientDTO {
     private String contactNumber;
     private String email;
     private String address;
+    private Long brokerId; // reference only
 }
+
+

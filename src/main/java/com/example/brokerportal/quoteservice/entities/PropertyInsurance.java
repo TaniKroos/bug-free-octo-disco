@@ -20,7 +20,7 @@ public class PropertyInsurance {
     @JoinColumn(name = "quote_insurance_id", nullable = false)
     private QuoteInsurance quoteInsurance;
 
-    private String locationAddress;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "property_type", length = 50)

@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/authenticate", "/register","/verify/**").permitAll() // Public endpoints
                         .requestMatchers("/api/quotes/**").authenticated()
+                        .requestMatchers("/api/clients/**").authenticated()
                         .requestMatchers("/api/cyber-insurance/**").authenticated()
                         .requestMatchers("/api/property-insurance/**").authenticated()
                         .requestMatchers("/api/general-liability-insurance/**").authenticated()
