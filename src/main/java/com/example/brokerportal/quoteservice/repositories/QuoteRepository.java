@@ -18,5 +18,5 @@ public interface QuoteRepository extends JpaRepository<Quote, Long>, JpaSpecific
     Page<Quote> findAll(Pageable pageable);
     Optional<Quote> findByIdAndDeletedFalse(Long id);
     List<Quote> findByBrokerIdAndDeletedTrue(Long brokerId);
-   // List<Quote> findByBrokerIdAndDeletedFalse(Long brokerId);
+   List<Quote> findByBrokerIdAndDeletedFalse(Long brokerId);
 }

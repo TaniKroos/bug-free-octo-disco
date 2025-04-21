@@ -1,16 +1,15 @@
 package com.example.brokerportal.quoteservice.dto;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
+@RequiredArgsConstructor
 @Builder
+@Getter
+@Setter
 public class QuoteSummaryDTO {
     private Long quoteId;
     private String clientName;
