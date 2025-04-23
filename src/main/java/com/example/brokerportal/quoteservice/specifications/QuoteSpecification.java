@@ -21,7 +21,7 @@ public class QuoteSpecification {
             }
 
             // Only non-deleted
-            predicates.add(cb.isFalse(root.get("deleted")));
+
 
             // Client name
             if (filter.getClientName() != null && !filter.getClientName().isEmpty()) {

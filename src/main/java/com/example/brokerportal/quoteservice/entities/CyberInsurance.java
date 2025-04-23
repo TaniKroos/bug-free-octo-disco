@@ -47,8 +47,7 @@ public class CyberInsurance {
     @Column(name = "cloud_services_used", length = 255)
     private String cloudServicesUsed;
 
-    @Column(name = "industry_type", length = 100)
-    private String industryType;
+
 
 
 

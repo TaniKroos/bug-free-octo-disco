@@ -1,6 +1,6 @@
 package com.example.brokerportal.quoteservice.controller;
 
-
+import com.example.brokerportal.common.errors.ErrorResponse;
 import com.example.brokerportal.quoteservice.dto.PagedResponseDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteDTO;
 import com.example.brokerportal.quoteservice.dto.QuoteSearchFilterDTO;
@@ -8,13 +8,16 @@ import com.example.brokerportal.quoteservice.dto.QuoteSummaryDTO;
 import com.example.brokerportal.quoteservice.service.QuoteService;
 import com.example.brokerportal.quoteservice.service.RateLimiterService;
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,35 +26,69 @@ import java.util.List;
 public class QuoteController {
     private final QuoteService quoteService;
     private final RateLimiterService rateLimiterService;
+
     @GetMapping("/test")
     public String test() {
         return "Quote controller is alive!";
     }
+
     // Create Quote
     @PostMapping
-    public ResponseEntity<?> createQuote(@RequestBody QuoteDTO quoteDTO) {
+    public ResponseEntity<?> createQuote(@Valid @RequestBody QuoteDTO quoteDTO, BindingResult bindingResult) {
+        // Check if there are validation errors
+        if (bindingResult.hasErrors()) {
+            // Collect all error messages and return as JSON response
+            List<String> errorMessages = bindingResult.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.toList());
+
+            ErrorResponse errorResponse = new ErrorResponse("Validation failed", errorMessages);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         String userKey = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        // Check rate limiting
         if (!rateLimiterService.allowRequest(userKey, 5)) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body("Rate limit exceeded. Try again later.");
+            ErrorResponse errorResponse = new ErrorResponse("Rate limit exceeded", List.of("Try again later."));
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
         }
-        QuoteDTO createdQuote = quoteService.createQuote(quoteDTO);
-        return ResponseEntity.ok(createdQuote);
+
+        try {
+            // Proceed with the creation logic
+            QuoteDTO createdQuote = quoteService.createQuote(quoteDTO);
+            return ResponseEntity.ok(createdQuote);
+        } catch (Exception e) {
+            // Handle unexpected exceptions gracefully and return JSON error
+            ErrorResponse errorResponse = new ErrorResponse("Error occurred while creating the quote", List.of(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 
     // Update Quote
     @PutMapping("/{id}")
-    public ResponseEntity<QuoteDTO> updateQuote(@PathVariable Long id, @RequestBody QuoteDTO quoteDTO) {
+    public ResponseEntity<?> updateQuote(@PathVariable Long id, @Valid @RequestBody QuoteDTO quoteDTO, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            // Collect all error messages and return as JSON response
+            List<String> errorMessages = bindingResult.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.toList());
+
+            ErrorResponse errorResponse = new ErrorResponse("Validation failed", errorMessages);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         QuoteDTO updatedQuote = quoteService.updateQuote(id, quoteDTO);
         return ResponseEntity.ok(updatedQuote);
     }
+
     @GetMapping("/all-deleted")
-    public ResponseEntity<List<QuoteDTO>> getDeletedQuotesByClientName( ) {
+    public ResponseEntity<List<QuoteDTO>> getDeletedQuotesByClientName() {
         List<QuoteDTO> quotes = quoteService.findByBrokerIdAndDeletedTrue();
         return ResponseEntity.ok(quotes);
     }
-     // Get Quote by ID
+
+    // Get Quote by ID
     @GetMapping("/{id}")
     public ResponseEntity<QuoteDTO> getQuoteById(@PathVariable Long id) {
         QuoteDTO quoteDTO = quoteService.getQuoteById(id);
@@ -64,12 +101,13 @@ public class QuoteController {
         quoteService.softDeleteQuote(id);
         return ResponseEntity.ok("Quote with ID " + id + " has been soft deleted along with its insurances.");
     }
+
     @GetMapping("/by-broker")
     public ResponseEntity<PagedResponseDTO<QuoteSummaryDTO>> getQuoteByBrokerId(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ){
-        PagedResponseDTO<QuoteSummaryDTO> ls = quoteService.getQuotesByBrokerId(page,size);
+        PagedResponseDTO<QuoteSummaryDTO> ls = quoteService.getQuotesByBrokerId(page, size);
         return ResponseEntity.ok(ls);
     }
 
@@ -84,6 +122,7 @@ public class QuoteController {
         quoteService.bindQuote(id);
         return ResponseEntity.ok("Quote bound successfully!");
     }
+
     @PostMapping("/search")
     public ResponseEntity<PagedResponseDTO<QuoteSummaryDTO>> searchQuotes(
             @RequestBody QuoteSearchFilterDTO filter,
@@ -98,6 +137,4 @@ public class QuoteController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-
 }

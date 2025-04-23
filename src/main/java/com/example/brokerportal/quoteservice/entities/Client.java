@@ -16,7 +16,7 @@ public class Client {
 
     private String clientName;
     private String businessType;
-    private String industryType;
+
     private String contactNumber;
     private String email;
     private String address;

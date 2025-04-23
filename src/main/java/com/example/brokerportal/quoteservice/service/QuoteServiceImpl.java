@@ -25,6 +25,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +70,7 @@ public class QuoteServiceImpl implements QuoteService{
                 Client newClient = new Client();
                 newClient.setClientName(quoteDTO.getClient().getClientName());
                 newClient.setBusinessType(quoteDTO.getClient().getBusinessType());
-                newClient.setIndustryType(quoteDTO.getClient().getIndustryType());
+
                 newClient.setContactNumber(quoteDTO.getClient().getContactNumber());
                 newClient.setEmail(quoteDTO.getClient().getEmail());
                 newClient.setAddress(quoteDTO.getClient().getAddress());
@@ -77,6 +79,7 @@ public class QuoteServiceImpl implements QuoteService{
             });
             quote.setClient(client);
         }
+        quote.setEndDate(quoteDTO.getStartDate().plusYears(1));
 
         Quote saved = quoteRepository.save(quote);
         if(quoteDTO.getInsurances() != null && !quoteDTO.getInsurances().isEmpty()){
@@ -159,51 +162,55 @@ public class QuoteServiceImpl implements QuoteService{
         Quote quote = quoteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Quote not found with id: " + id));
         authorizeBrokerAccess(quote);
+
         if (QuoteStatus.valueOf(quote.getStatus()).equals(QuoteStatus.BOUND)) {
             throw new IllegalStateException("Quote is already bound and cannot be modified.");
         }
+
+        quote.setPreviousStatus(quote.getStatus()); // Store current status
+        quote.setStatus(QuoteStatus.DELETED.name()); // Set to DELETED
         quote.setDeleted(true);
         quote.setUpdatedAt(LocalDateTime.now());
-
 
         if (quote.getInsurances() != null && !quote.getInsurances().isEmpty()) {
             for (QuoteInsurance quoteInsurance : quote.getInsurances()) {
                 quoteInsurance.setWasSelectedBefore(quoteInsurance.isSelected());
                 quoteInsurance.setSelected(false); // soft delete quote_insurance
 
-                if ("CYBER".equalsIgnoreCase(quoteInsurance.getInsuranceType())
-                        && quoteInsurance.getCyberInsurance() != null) {
-                    quoteInsurance.getCyberInsurance().setDeleted(true);
-                    cyberInsuranceRepository.save(quoteInsurance.getCyberInsurance());
-                }
-                if ("PROPERTY".equalsIgnoreCase(quoteInsurance.getInsuranceType())
-                        && quoteInsurance.getPropertyInsurance() != null) {
-                    quoteInsurance.getPropertyInsurance().setDeleted(true);
-                    propertyInsuranceRepository.save(quoteInsurance.getPropertyInsurance());
-                }
-                if ("GENERAL".equalsIgnoreCase(quoteInsurance.getInsuranceType())
-                        && quoteInsurance.getGeneralInsurance() != null) {
-                    quoteInsurance.getGeneralInsurance().setDeleted(true);
-                    generalInsuranceRepository.save(quoteInsurance.getGeneralInsurance());
+                switch (quoteInsurance.getInsuranceType().toUpperCase()) {
+                    case "CYBER":
+                        if (quoteInsurance.getCyberInsurance() != null) {
+                            quoteInsurance.getCyberInsurance().setDeleted(true);
+                            cyberInsuranceRepository.save(quoteInsurance.getCyberInsurance());
+                        }
+                        break;
+                    case "PROPERTY":
+                        if (quoteInsurance.getPropertyInsurance() != null) {
+                            quoteInsurance.getPropertyInsurance().setDeleted(true);
+                            propertyInsuranceRepository.save(quoteInsurance.getPropertyInsurance());
+                        }
+                        break;
+                    case "GENERAL":
+                        if (quoteInsurance.getGeneralInsurance() != null) {
+                            quoteInsurance.getGeneralInsurance().setDeleted(true);
+                            generalInsuranceRepository.save(quoteInsurance.getGeneralInsurance());
+                        }
+                        break;
                 }
 
-                if(quoteInsurance.getPremium() != null){
+                if (quoteInsurance.getPremium() != null) {
                     quoteInsurance.getPremium().setDeleted(true);
                 }
-
             }
         }
 
-
-        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
-        String changedDetails = "Soft Deleted Quote ID: " + quote.getId() +
-                ", Status: " + quote.getStatus() ;
-
+        String performedBy = userService.getCurrentUser().getEmail();
+        String changedDetails = "Soft Deleted Quote ID: " + quote.getId() + ", Status: " + quote.getStatus();
 
         auditLogService.logAction(AuditAction.QUOTE_SOFT_DELETED, quote, changedDetails, performedBy);
         quoteRepository.save(quote);
-
     }
+
 
     @Override
     public PagedResponseDTO<QuoteSummaryDTO> getQuotesByBrokerId(int page, int size) {
@@ -319,48 +326,62 @@ public class QuoteServiceImpl implements QuoteService{
     @Override
     @Transactional
     public void restoreQuote(Long id){
-        log.error("Hi from restoreQuote");
         Quote quote = quoteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Quote with this id does not exist"));
         authorizeBrokerAccess(quote);
 
         quote.setDeleted(false);
         quote.setUpdatedAt(LocalDateTime.now());
-        if(quote.getInsurances()!= null && !quote.getInsurances().isEmpty()){
-            for (QuoteInsurance qi : quote.getInsurances()){
-                String insuranceType = qi.getInsuranceType();
-                switch (insuranceType.toUpperCase()) {
+
+        // Restore status from previousStatus or based on premium
+        if (quote.getPreviousStatus() != null) {
+            quote.setStatus(quote.getPreviousStatus());
+            quote.setPreviousStatus(null); // clear after restoration
+        } else if (quote.getEstimatedPremium() != null && quote.getEstimatedPremium().doubleValue() > 0) {
+            quote.setStatus(QuoteStatus.PENDING.name());
+        } else {
+            quote.setStatus(QuoteStatus.DRAFT.name());
+        }
+
+        if (quote.getInsurances() != null && !quote.getInsurances().isEmpty()) {
+            for (QuoteInsurance qi : quote.getInsurances()) {
+                switch (qi.getInsuranceType().toUpperCase()) {
                     case "CYBER":
-                        qi.getCyberInsurance().setDeleted(false);
-                        cyberInsuranceRepository.save(qi.getCyberInsurance());
+                        if (qi.getCyberInsurance() != null) {
+                            qi.getCyberInsurance().setDeleted(false);
+                            cyberInsuranceRepository.save(qi.getCyberInsurance());
+                        }
                         break;
                     case "PROPERTY":
-                        qi.getPropertyInsurance().setDeleted(false);
-                        propertyInsuranceRepository.save(qi.getPropertyInsurance());
+                        if (qi.getPropertyInsurance() != null) {
+                            qi.getPropertyInsurance().setDeleted(false);
+                            propertyInsuranceRepository.save(qi.getPropertyInsurance());
+                        }
                         break;
                     case "GENERAL":
-                        qi.getGeneralInsurance().setDeleted(false);
-                        generalInsuranceRepository.save(qi.getGeneralInsurance());
-                        break;
-                    default:
+                        if (qi.getGeneralInsurance() != null) {
+                            qi.getGeneralInsurance().setDeleted(false);
+                            generalInsuranceRepository.save(qi.getGeneralInsurance());
+                        }
                         break;
                 }
-                // Restore premium
+
                 if (qi.getPremium() != null) {
                     qi.getPremium().setDeleted(false);
                     premiumRepository.save(qi.getPremium());
                 }
+
                 qi.setSelected(Boolean.TRUE.equals(qi.getWasSelectedBefore()));
             }
         }
-        String performedBy = userService.getCurrentUser().getEmail(); // or getUsername()
-        String changedDetails = "Restore Quote ID: " + quote.getId() +
-                ", Status: " + quote.getStatus() ;
 
+        String performedBy = userService.getCurrentUser().getEmail();
+        String changedDetails = "Restore Quote ID: " + quote.getId() + ", Status: " + quote.getStatus();
 
         auditLogService.logAction(AuditAction.QUOTE_RESTORED, quote, changedDetails, performedBy);
         quoteRepository.save(quote);
     }
+
 
     @Override
     @Transactional
@@ -427,29 +448,3 @@ public class QuoteServiceImpl implements QuoteService{
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

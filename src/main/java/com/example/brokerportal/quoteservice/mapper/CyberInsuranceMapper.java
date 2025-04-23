@@ -29,7 +29,7 @@ public class CyberInsuranceMapper {
                 .hasCybersecurityTraining(entity.getHasCybersecurityTraining())
                 .paymentProcessingMethods(entity.getPaymentProcessingMethods())
                 .cloudServicesUsed(entity.getCloudServicesUsed())
-                .industryType(entity.getIndustryType())
+
                 .coverages(quoteInsuranceCoverages != null
                         ? quoteInsuranceCoverages.stream()
                         .map(CoverageMapper::toDTO)
@@ -55,7 +55,7 @@ public class CyberInsuranceMapper {
                 .hasCybersecurityTraining(dto.getHasCybersecurityTraining())
                 .paymentProcessingMethods(dto.getPaymentProcessingMethods())
                 .cloudServicesUsed(dto.getCloudServicesUsed())
-                .industryType(dto.getIndustryType())
+
                 .deleted(false)
                 .build();
 
@@ -93,7 +93,7 @@ public class CyberInsuranceMapper {
         entity.setHasCybersecurityTraining(dto.getHasCybersecurityTraining());
         entity.setPaymentProcessingMethods(dto.getPaymentProcessingMethods());
         entity.setCloudServicesUsed(dto.getCloudServicesUsed());
-        entity.setIndustryType(dto.getIndustryType());
+
 
         //  Update Coverages in QuoteInsurance
         CoverageMapper.updateCoveragesInQuoteInsurance(dto.getCoverages(), quoteInsurance);

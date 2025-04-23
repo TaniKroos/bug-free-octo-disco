@@ -27,7 +27,7 @@ public class QuoteMapper {
                             dto.setCyberInsurance(null);
                         }
 
-                        // You can add similar checks for PROPERTY or GENERAL_LIABILITY here if needed
+                        // Add similar checks for PROPERTY or GENERAL_LIABILITY here if needed
 
                         return dto;
                     })
@@ -52,13 +52,13 @@ public class QuoteMapper {
                 .estimatedPremium(BigDecimal.valueOf(premiumGenerated ? totalPremium : 0.0))
                 .createdAt(quote.getCreatedAt())
                 .updatedAt(quote.getUpdatedAt())
+                .startDate(quote.getStartDate())   // Add startDate
+                .endDate(quote.getEndDate())       // Add endDate
                 .isDeleted(quote.isDeleted())
-                .brokerId(quote.getBroker() != null ? quote.getBroker().getId() : null)
                 .client(ClientMapper.toDTO(quote.getClient()))
                 .insurances(insuranceDTOs)
                 .build();
     }
-
 
     public static Quote toEntity(QuoteDTO dto) {
         return Quote.builder()
@@ -67,12 +67,14 @@ public class QuoteMapper {
                 .estimatedPremium(dto.getEstimatedPremium())
                 .createdAt(dto.getCreatedAt())
                 .updatedAt(dto.getUpdatedAt())
+                .startDate(dto.getStartDate())  // Add startDate
+                .endDate(dto.getEndDate())      // Add endDate
                 .deleted(dto.isDeleted())
                 .build();
     }
 
-    public static  QuoteSummaryDTO toSummaryDTO(Quote quote) {
 
+    public static QuoteSummaryDTO toSummaryDTO(Quote quote) {
         if (quote == null) {
             return null;
         }
@@ -82,6 +84,9 @@ public class QuoteMapper {
         dto.setStatus(quote.getStatus());
         dto.setCreatedAt(quote.getCreatedAt());
 
+        // Add startDate and endDate
+        dto.setStartDate(quote.getStartDate());
+        dto.setEndDate(quote.getEndDate());
 
         // Extract selected insurance types
         List<String> insuranceTypes = quote.getInsurances() != null ?

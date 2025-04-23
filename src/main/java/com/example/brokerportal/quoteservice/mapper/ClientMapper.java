@@ -11,11 +11,11 @@ public class ClientMapper {
                 .id(client.getId())
                 .clientName(client.getClientName())
                 .businessType(client.getBusinessType())
-                .industryType(client.getIndustryType())
+
                 .contactNumber(client.getContactNumber())
                 .email(client.getEmail())
                 .address(client.getAddress())
-                .brokerId(client.getBroker() != null ? client.getBroker().getId() : null)
+
                 .build();
     }
 
@@ -24,7 +24,7 @@ public class ClientMapper {
         client.setId(dto.getId());
         client.setClientName(dto.getClientName());
         client.setBusinessType(dto.getBusinessType());
-        client.setIndustryType(dto.getIndustryType());
+
         client.setContactNumber(dto.getContactNumber());
         client.setEmail(dto.getEmail());
         client.setAddress(dto.getAddress());

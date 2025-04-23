@@ -7,6 +7,7 @@ import lombok.*;
 import com.example.brokerportal.authservice.entities.User;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,11 @@ public class Quote {
 
     @Column(name = "is_deleted")
     private boolean deleted = false;
+    @Column(name = "start_date")
+    private LocalDate startDate;  // New field
 
-
-
+    @Column(name = "end_date")
+    private LocalDate endDate;
+    @Column(name = "previous_status")
+    private String previousStatus;
 }

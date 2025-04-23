@@ -107,7 +107,9 @@ public class DashboardService {
                                 quote.getStatus(),
                                 quote.getCreatedAt(),
                                 selectedInsuranceTypes,
-                                totalPremium
+                                totalPremium,
+                                quote.getStartDate(),
+                                quote.getEndDate()
                         );
                     })
                     .collect(Collectors.toList());
