@@ -65,7 +65,7 @@ public class VerificationService {
         cache.evict(email);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "User verified and registered successfully!");
+
         response.put("accessToken", accessToken);
         // response.put("refreshToken", refreshToken); // Uncomment if needed
 

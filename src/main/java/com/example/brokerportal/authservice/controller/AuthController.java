@@ -33,14 +33,8 @@ public class AuthController {
 
     // Returns access token on successful registration.
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody User user, BindingResult result) {
-        if (result.hasErrors()) {
-            // Collect error messages and return a bad request response with those messages
-            List<String> errorMessages = result.getAllErrors().stream()
-                    .map(ObjectError::getDefaultMessage)
-                    .collect(Collectors.toList());
-            return ResponseEntity.badRequest().body(errorMessages);
-        }
+    public ResponseEntity<?> register( @RequestBody User user, BindingResult result) {
+
         authService.register(user);
         return ResponseEntity.ok("Verification code sent to your email");
     }
