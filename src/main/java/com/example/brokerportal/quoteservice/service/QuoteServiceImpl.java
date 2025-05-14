@@ -251,45 +251,35 @@ public class QuoteServiceImpl implements QuoteService{
 
         for (QuoteInsurance qi : quote.getInsurances()) {
             String insuranceType = qi.getInsuranceType();
-
             if (selectionMap.containsKey(insuranceType)) {
                 boolean selected = selectionMap.get(insuranceType);
                 qi.setSelected(selected);
 
-                if ("CYBER".equalsIgnoreCase(insuranceType) && qi.getCyberInsurance() != null) {
-                    if (selected && Boolean.TRUE.equals(qi.getCyberInsurance().getDeleted())) {
-
-                        qi.getCyberInsurance().setDeleted(false);
-                        cyberInsuranceRepository.save(qi.getCyberInsurance());
-                    } else if (!selected && Boolean.FALSE.equals(qi.getCyberInsurance().getDeleted())) {
-
-                        qi.getCyberInsurance().setDeleted(true);
+                // Update soft-delete status ONLY IF insurance entity exists
+                if ("CYBER".equalsIgnoreCase(insuranceType)) {
+                    if (qi.getCyberInsurance() != null) {
+                        qi.getCyberInsurance().setDeleted(!selected);
                         cyberInsuranceRepository.save(qi.getCyberInsurance());
                     }
                 }
-                if ("PROPERTY".equalsIgnoreCase(insuranceType) && qi.getPropertyInsurance() != null) {
-                    if (selected && Boolean.TRUE.equals(qi.getPropertyInsurance().getDeleted())) {
-                        qi.getPropertyInsurance().setDeleted(false);
-                        propertyInsuranceRepository.save(qi.getPropertyInsurance());
-                    } else if (!selected && Boolean.FALSE.equals(qi.getPropertyInsurance().getDeleted())) {
-                        qi.getPropertyInsurance().setDeleted(true);
+
+                if ("PROPERTY".equalsIgnoreCase(insuranceType)) {
+                    if (qi.getPropertyInsurance() != null) {
+                        qi.getPropertyInsurance().setDeleted(!selected);
                         propertyInsuranceRepository.save(qi.getPropertyInsurance());
                     }
                 }
 
-                if ("GENERAL".equalsIgnoreCase(insuranceType) && qi.getGeneralInsurance() != null) {
-                    if (selected && Boolean.TRUE.equals(qi.getGeneralInsurance().getDeleted())) {
-                        qi.getGeneralInsurance().setDeleted(false);
-                        generalInsuranceRepository.save(qi.getGeneralInsurance());
-                    } else if (!selected && Boolean.FALSE.equals(qi.getGeneralInsurance().getDeleted())) {
-                        qi.getGeneralInsurance().setDeleted(true);
+                if ("GENERAL".equalsIgnoreCase(insuranceType)) {
+                    if (qi.getGeneralInsurance() != null) {
+                        qi.getGeneralInsurance().setDeleted(!selected);
                         generalInsuranceRepository.save(qi.getGeneralInsurance());
                     }
                 }
-        }
+            }
         }
 
-
+        // Add new QuoteInsurance if not already present
         updatedInsurances.forEach(dto -> {
             boolean alreadyPresent = quote.getInsurances().stream()
                     .anyMatch(q -> q.getInsuranceType().equalsIgnoreCase(dto.getInsuranceType()));
@@ -298,10 +288,13 @@ public class QuoteServiceImpl implements QuoteService{
                 newInsurance.setInsuranceType(dto.getInsuranceType());
                 newInsurance.setSelected(dto.isSelected());
                 newInsurance.setQuote(quote);
+
+                // Do NOT set related insurance objects now
                 quote.getInsurances().add(newInsurance);
             }
         });
     }
+
 
 
     private void updateClientDetails(Client client, ClientDTO updatedClientDto) {
@@ -436,6 +429,11 @@ public class QuoteServiceImpl implements QuoteService{
         List<QuoteSummaryDTO> content = quotePage.getContent().stream()
                 .map(QuoteMapper::toSummaryDTO)
                 .collect(Collectors.toList());
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        List<Quote> quotes = quoteRepository.findAllByStatusNotAndStartDateLessThanAndDeletedFalse("Bound",tomorrow );
+        for(Quote q:quotes){
+            System.out.println(q.getId());
+        }
 
         return new PagedResponseDTO<>(
                 content,

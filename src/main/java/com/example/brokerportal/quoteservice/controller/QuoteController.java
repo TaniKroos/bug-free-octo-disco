@@ -16,7 +16,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -97,9 +99,13 @@ public class QuoteController {
 
     // Soft Delete Quote
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> softDeleteQuote(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> softDeleteQuote(@PathVariable Long id) {
         quoteService.softDeleteQuote(id);
-        return ResponseEntity.ok("Quote with ID " + id + " has been soft deleted along with its insurances.");
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Quote with ID " + id + " has been soft deleted along with its insurances.");
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/by-broker")
@@ -118,9 +124,13 @@ public class QuoteController {
     }
 
     @PostMapping("/{id}/bind")
-    public ResponseEntity<String> bindQuote(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> bindQuote(@PathVariable Long id) {
         quoteService.bindQuote(id);
-        return ResponseEntity.ok("Quote bound successfully!");
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Quote bound successfully!");
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/search")

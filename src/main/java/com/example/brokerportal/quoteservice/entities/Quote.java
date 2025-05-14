@@ -43,7 +43,7 @@ public class Quote {
     @Column(name = "is_deleted")
     private boolean deleted = false;
     @Column(name = "start_date")
-    private LocalDate startDate;  // New field
+    private LocalDate startDate;  //
 
     @Column(name = "end_date")
     private LocalDate endDate;

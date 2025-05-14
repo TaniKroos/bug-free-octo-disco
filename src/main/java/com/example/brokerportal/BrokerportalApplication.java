@@ -3,6 +3,7 @@ package com.example.brokerportal;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = {
 		"com.example.brokerportal.quoteservice",
@@ -11,6 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 		"com.example.brokerportal.common"
 })
 @EnableAsync
+@EnableScheduling
 public class BrokerportalApplication {
 
 	public static void main(String[] args) {

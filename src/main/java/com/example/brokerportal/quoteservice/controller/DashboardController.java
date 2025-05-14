@@ -1,5 +1,7 @@
 package com.example.brokerportal.quoteservice.controller;
 
+import com.example.brokerportal.authservice.entities.User;
+import com.example.brokerportal.authservice.service.UserService;
 import com.example.brokerportal.quoteservice.dto.DashboardDataDTO;
 import com.example.brokerportal.quoteservice.service.DashboardService;
 import lombok.RequiredArgsConstructor;
@@ -14,15 +16,11 @@ public class DashboardController {
 
 
     private final DashboardService dashboardService;
+    private final UserService userService;
 
-    /**
-     * Endpoint to get the dashboard data for a broker.
-     * @param brokerId - ID of the broker
-     * @return DashboardDataDTO containing broker and quote data
-     */
     @GetMapping("/data")
-    public DashboardDataDTO getDashboardData(@RequestParam Long brokerId) {
-        System.out.println(brokerId);
-        return dashboardService.getDashboardDataForBroker(brokerId);
+    public DashboardDataDTO getDashboardData() {
+        User user = userService.getCurrentUser();
+        return dashboardService.getDashboardDataForBroker(user.getId());
     }
 }
